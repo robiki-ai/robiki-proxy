@@ -1,0 +1,32 @@
+{
+  "name": "@robiki/proxy",
+  "version": "1.0.0",
+  "description": "A Docker based proxy for communicating with multiple containers",
+  "keywords": [
+    "Robiki",
+    "Proxy",
+    "Docker",
+    "Package"
+  ],
+  "homepage": "https://github.com/robiki-ai/robiki-proxy#readme",
+  "bugs": {
+    "url": "https://github.com/robiki-ai/robiki-proxy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robiki-ai/robiki-proxy.git"
+  },
+  "license": "MIT",
+  "author": "Robiki sp. z o.o.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {},
+  "devDependencies": {
+    "@types/node": "25.0.3",
+    "@types/ws": "8.18.1",
+    "pkgroll": "2.21.4"
+  },
+  "dependencies": {
+    "ws": "8.19.0"
+  }
+}

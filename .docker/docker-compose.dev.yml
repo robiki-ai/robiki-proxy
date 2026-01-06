@@ -1,0 +1,21 @@
+services:
+  robiki-proxy:
+    container_name: "robiki-proxy"
+    build:
+      context: ./src
+      dockerfile: ./../.docker/dockerfiles/dev.dockerfile
+    ports:
+      - "443:443"
+      - "8080:8080"
+      - "9229:9229"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - robiki-proxy:/usr/src
+volumes:
+  robiki-proxy:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./src

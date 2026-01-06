@@ -1,0 +1,30 @@
+export function isMediaFile(path: string): boolean {
+  const mediaExtensions = [
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.svg',
+    '.webp',
+    '.mp4',
+    '.webm',
+    '.ogg',
+    '.mp3',
+    '.wav',
+    '.flac',
+    '.aac',
+    '.m4a',
+    '.ogg',
+    '.wav',
+    '.flac',
+    '.aac',
+    '.m4a',
+    '.woff2',
+    '.woff',
+    '.ttf',
+    '.eot',
+    '.otf',
+    '.ico',
+  ];
+  return mediaExtensions.some((ext) => path.endsWith(ext));
+}

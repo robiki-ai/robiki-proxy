@@ -1,0 +1,14 @@
+# Directories
+remote-profile/
+generated/
+node_modules/
+dist_node/
+dist/
+.git/
+.cache/
+.temp/
+
+# Files
+*.md
+*.log
+.DS_Store
