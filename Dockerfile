@@ -73,5 +73,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/robiki-proxy/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the proxy with dumb-init
-CMD ["dumb-init", "node", "dist/index.js"]
+CMD ["dumb-init", "node", "--inspect=0.0.0.0:9229", "dist/index.js"]
 

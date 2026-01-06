@@ -414,6 +414,7 @@ describe('ProxyServer Integration Tests', () => {
             target: `127.0.0.1:${mockBackendPort}`,
           },
         },
+        ports: [8080],
       };
 
       const proxy = new ProxyServer(loadConfig(config));
@@ -456,6 +457,7 @@ describe('ProxyServer Integration Tests', () => {
             target: `127.0.0.1:${mockBackendPort}`,
           },
         },
+        ports: [8080],
       };
 
       const proxy = new ProxyServer(loadConfig(config));
@@ -503,6 +505,7 @@ describe('ProxyServer Integration Tests', () => {
             target: `127.0.0.1:${mockBackendPort}`,
           },
         },
+        ports: [8080],
       };
 
       const proxy = new ProxyServer(loadConfig(config));

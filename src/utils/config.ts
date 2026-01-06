@@ -63,6 +63,8 @@ export interface ServerConfig {
   cors?: CorsConfig;
   /** Global validation function */
   validate?: (info: ConnectionInfo) => Promise<ForwardValidationResult>;
+  /** Ports to listen on (defaults to [443, 8080, 9229]) */
+  ports?: number[];
 }
 
 /**
@@ -238,7 +240,7 @@ export class ProxyConfig {
    * Get ports to listen on
    */
   getPorts(): number[] {
-    return [443, 8080, 9229];
+    return this.config.ports || [443, 8080, 9229];
   }
 
   /**
