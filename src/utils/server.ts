@@ -1,27 +1,21 @@
 import net, { type Server as NET } from 'node:net';
 import {
   createServer as startHTTP,
-  IncomingMessage,
-  ServerResponse,
+  type IncomingMessage,
   type OutgoingHttpHeaders,
   type Server as HTTP,
 } from 'node:http';
 import { createServer as startHTTPS } from 'node:https';
 import {
   constants,
-  connect,
   createServer as startHTTP2,
   createSecureServer as startHTTPS2,
-  type ServerHttp2Stream,
   type IncomingHttpHeaders,
-  type ClientHttp2Session,
-  type ClientHttp2Stream,
 } from 'node:http2';
 import { type Duplex } from 'node:stream';
 import { type TLSSocket, type Server as TLS } from 'node:tls';
 import { exec } from 'node:child_process';
 import WebSocket, { WebSocketServer } from 'ws';
-import { toString } from './headers';
 import { num } from './uuid';
 
 export enum RequestType {
@@ -43,9 +37,9 @@ export type WebSocketRouter = (req: IncomingMessage, socket: TLSWebSocket, heade
 export type Streamer = (stream: any, headers: any, flags: any) => void;
 
 export interface ServerOpts {
-  key?: string;
-  cert?: string;
-  ca?: string;
+  key?: string | Buffer;
+  cert?: string | Buffer;
+  ca?: string | Buffer;
 }
 
 export interface Http2ServerOpts extends ServerOpts {
@@ -216,6 +210,38 @@ export const http2HeadersToHttp1Headers = (headers: IncomingHttpHeaders): Incomi
   return http1Headers;
 };
 
+export interface HttpServerOpts extends ServerOpts {
+  port?: number;
+}
+
+/**
+ * Starts an HTTP/S server
+ *
+ * @param {router} routes - The routes to use
+ * @param {HttpServerOpts} [opts] - The options to use
+ * @returns {Server} The HTTP/S server
+ * @example
+ * http(routes)
+ * // => Server { ... }
+ */
+export const http = (routes: Router, opts?: HttpServerOpts): HTTP => {
+  const port = opts?.port || 8080;
+  const sslOpts = opts && (opts.key || opts.cert) ? { key: opts.key, cert: opts.cert, ca: opts.ca } : undefined;
+
+  return (sslOpts ? startHTTPS(sslOpts, routes) : startHTTP(routes))
+    .listen(port, '0.0.0.0', () => {
+      console.log(`Server is listening on 0.0.0.0:${port}`);
+    })
+    .on('error', async (err) => {
+      if (err && err.message.indexOf('EADDRINUSE') !== -1) {
+        console.log(`Port ${port} is already in use, attempting to kill process...`);
+        return allocatePort(port).then(() => http(routes, opts));
+      }
+      console.log('Server error: ', err);
+      throw err;
+    });
+};
+
 /**
  * Starts an HTTP2 server
  *
@@ -233,12 +259,13 @@ export const http2 = (routes?: Router, streams?: Streamer, opts?: Http2ServerOpt
       console.log(`Server is listening on 0.0.0.0:${opts?.port || 3000}`);
     })
     .on('stream', (stream, headers, flags) => streams && streams(stream, headers, flags))
-    .on('error', (err) => {
+    .on('error', async (err) => {
       if (err && err.message.indexOf('EADDRINUSE') !== -1) {
         console.log(`Port ${opts?.port || 3000} is already in use, attempting to kill process...`);
         return allocatePort(opts?.port || 3000).then(() => http2(routes, streams, opts));
       }
       console.log('Server error: ', err);
+      throw err;
     });
 };
 
@@ -299,7 +326,7 @@ export const websocket = (
           })
           .catch(() => callback(false, 500, 'Internal Server Error'));
       }
-      callback(true);
+      return callback(true);
     },
   });
 

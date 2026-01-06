@@ -1,9 +1,11 @@
 import { connect, type IncomingHttpHeaders, type ServerHttp2Stream } from 'node:http2';
 import { day } from '../utils/time';
 import { isMediaFile } from '../utils/files';
+import { getConfig } from '../utils/config';
 
 export const streamAPIProxyHandler = async (stream: ServerHttp2Stream, headers: IncomingHttpHeaders) => {
-  const { target, ssl, remap } = getTarget(headers[':authority'] || '');
+  const config = getConfig();
+  const { target, ssl, remap } = config.getTarget(headers[':authority'] || '');
   if (!ssl) return;
   if (!target) {
     stream.destroy(new Error('Not Found'));

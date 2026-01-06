@@ -3,15 +3,18 @@ import { request as httpsRequest } from 'node:https';
 import { http2HeadersToHttp1Headers, http1ToHttp2Headers } from '../utils/server';
 import { day } from '../utils/time';
 import { isMediaFile } from '../utils/files';
+import { getConfig } from '../utils/config';
 
-export const restAPIProxyHandler = async (req: IncomingMessage, res: ServerResponse) => {
-  const { target, ssl, remap } = getTarget(req.headers.host || req.headers[':authority']?.toString() || '');
+export const restAPIProxyHandler = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  const config = getConfig();
+  const { target, ssl, remap } = config.getTarget(req.headers.host || req.headers[':authority']?.toString() || '');
 
   if (req.httpVersion === '2.0' && ssl) return;
 
   if (!target) {
     res.writeHead(404);
-    return res.end('Not Found');
+    res.end('Not Found');
+    return;
   }
 
   console.log('HTTP1 rest proxy', `${ssl ? 'https' : 'http'}://${target}${req.url}`, req.headers.host);

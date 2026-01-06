@@ -1,13 +1,15 @@
 import { type IncomingHttpHeaders, type IncomingMessage } from 'node:http';
 import { WebSocket } from 'ws';
 import { type TLSWebSocket } from '../utils/server';
+import { getConfig } from '../utils/config';
 
 export const websocketAPIProxyHandler = async (
   req: IncomingMessage,
   socket: TLSWebSocket,
   headers: IncomingHttpHeaders
 ) => {
-  const { target, ssl, remap } = getTarget(req.headers.host || '');
+  const config = getConfig();
+  const { target, ssl, remap } = config.getTarget(req.headers.host || '');
 
   if (!target) return socket.close();
 

@@ -1,0 +1,55 @@
+{
+  "ssl": {
+    "key": "./certs/key.pem",
+    "cert": "./certs/cert.pem",
+    "ca": "./certs/ca.pem",
+    "allowHTTP1": true
+  },
+  "cors": {
+    "origin": "*",
+    "methods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "OPTIONS",
+      "PATCH"
+    ],
+    "allowedHeaders": [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With"
+    ],
+    "exposedHeaders": [
+      "X-Total-Count",
+      "X-Page-Count"
+    ],
+    "credentials": true,
+    "maxAge": 86400
+  },
+  "routes": {
+    "api.example.com": {
+      "target": "backend-service:3000",
+      "ssl": true,
+      "cors": {
+        "origin": [
+          "https://example.com",
+          "https://www.example.com"
+        ],
+        "credentials": true
+      }
+    },
+    "example.com": {
+      "target": "frontend-service:8080",
+      "ssl": false
+    },
+    "*.example.com": {
+      "target": "wildcard-service:4000",
+      "ssl": true
+    },
+    "api.example.com:8080": {
+      "target": "backend-service:8080",
+      "ssl": false
+    }
+  }
+}

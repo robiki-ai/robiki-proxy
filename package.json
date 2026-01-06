@@ -1,12 +1,18 @@
 {
   "name": "@robiki/proxy",
   "version": "1.0.0",
-  "description": "A Docker based proxy for communicating with multiple containers",
+  "description": "A flexible HTTP/2 proxy server with WebSocket support, configurable routing, CORS, and validation. Use as npm package or Docker container.",
   "keywords": [
-    "Robiki",
-    "Proxy",
-    "Docker",
-    "Package"
+    "proxy",
+    "http2",
+    "websocket",
+    "reverse-proxy",
+    "docker",
+    "cors",
+    "ssl",
+    "tls",
+    "routing",
+    "middleware"
   ],
   "homepage": "https://github.com/robiki-ai/robiki-proxy#readme",
   "bugs": {
@@ -19,14 +25,46 @@
   "license": "MIT",
   "author": "Robiki sp. z o.o.",
   "type": "module",
-  "main": "index.js",
-  "scripts": {},
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./proxy": {
+      "import": "./dist/proxy.js",
+      "types": "./dist/proxy.d.ts"
+    },
+    "./config": {
+      "import": "./dist/utils/config.js",
+      "types": "./dist/utils/config.d.ts"
+    }
+  },
+  "bin": {
+    "robiki-proxy": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "pkgroll",
+    "dev": "node --watch src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "yarn build"
+  },
   "devDependencies": {
     "@types/node": "25.0.3",
-    "@types/ws": "8.18.1",
+    "typescript": "5.9.3",
     "pkgroll": "2.21.4"
   },
   "dependencies": {
+    "@types/ws": "8.18.1",
     "ws": "8.19.0"
+  },
+  "engines": {
+    "node": ">=21.0.0"
   }
 }

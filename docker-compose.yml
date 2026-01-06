@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: robiki/proxy:latest
+    container_name: robiki-proxy
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "8080:8080"
+      - "9229:9229"
+    volumes:
+      # Mount configuration file
+      - ./proxy.config.json:/usr/src/proxy.config.json:ro
+      # Mount certificates directory
+      - ./certs:/usr/src/certs:ro
+      # Optional: mount custom configuration
+      - ./config:/usr/src/config:ro
+    environment:
+      - NODE_ENV=production
+      - PROXY_CONFIG=/usr/src/proxy.config.json
+      - CORS_ORIGIN=$CORS_ORIGIN
+      - CORS_METHODS=$CORS_METHODS
+      - CORS_HEADERS=$CORS_HEADERS
+      - CORS_CREDENTIALS=$CORS_CREDENTIALS
+      - SSL_KEY=$SSL_KEY
+      - SSL_CERT=$SSL_CERT
+      - SSL_CA=$SSL_CA
+      - SSL_ALLOW_HTTP1=$SSL_ALLOW_HTTP1
+    networks:
+      - proxy-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  proxy-network:
+    driver: bridge
