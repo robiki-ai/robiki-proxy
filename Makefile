@@ -1,4 +1,4 @@
-.PHONY: help install build dev start clean test test-watch test-ui test-coverage test-all docker-build docker-build-dev docker-build-prod docker-run docker-stop docker-logs publish test-docker test-docker-full test-docker-config test-docker-compose
+.PHONY: help install build dev start clean test test-watch test-ui test-coverage test-all docker-build docker-build-dev docker-build-prod docker-run docker-stop docker-logs publish test-docker test-docker-full test-docker-config test-docker-compose docker-tag docker-push-hub docker-push-multiarch
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -54,7 +54,37 @@ docker-logs: ## View Docker logs
 	docker-compose logs -f proxy
 
 publish: build ## Publish to npm
-	npm publish --access public
+	npm publish
+
+# Docker publishing configuration
+DOCKER_IMAGE_NAME ?= robiki/proxy
+VERSION ?= $(shell node -p "require('./package.json').version")
+
+docker-tag: ## Tag Docker image with version
+	docker tag $(DOCKER_IMAGE_NAME):latest $(DOCKER_IMAGE_NAME):$(VERSION)
+
+docker-push-hub: docker-build docker-tag ## Build and push to Docker Hub
+	@echo "Pushing $(DOCKER_IMAGE_NAME):$(VERSION) and $(DOCKER_IMAGE_NAME):latest to Docker Hub..."
+	docker push $(DOCKER_IMAGE_NAME):$(VERSION)
+	docker push $(DOCKER_IMAGE_NAME):latest
+	@echo "✓ Successfully pushed to Docker Hub"
+
+docker-push-multiarch: ## Build and push multi-platform image (amd64 + arm64)
+	@echo "Building and pushing multi-platform image..."
+	@if ! docker buildx ls | grep -q multiarch; then \
+		echo "Creating buildx builder 'multiarch'..."; \
+		docker buildx create --name multiarch --driver docker-container --use; \
+		docker buildx inspect --bootstrap; \
+	else \
+		docker buildx use multiarch; \
+	fi
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		-t $(DOCKER_IMAGE_NAME):$(VERSION) \
+		-t $(DOCKER_IMAGE_NAME):latest \
+		--push \
+		.
+	@echo "✓ Successfully pushed multi-platform image to Docker Hub"
 
 test-docker: docker-build ## Test Docker build
 	docker run --rm robiki/proxy:latest node -e "console.log('Docker build successful')"

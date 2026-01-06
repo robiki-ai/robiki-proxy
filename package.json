@@ -60,7 +60,11 @@
     "test:docker": "make test-docker-full",
     "test:docker:config": "make test-docker-config",
     "test:all": "yarn test && yarn test:docker",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "publish:npm": "npm publish",
+    "publish:docker": "make docker-push-hub",
+    "publish:docker:multiarch": "make docker-push-multiarch",
+    "publish:all": "yarn publish:npm && yarn publish:docker"
   },
   "devDependencies": {
     "@types/node": "25.0.3",
@@ -78,5 +82,9 @@
   },
   "engines": {
     "node": ">=21.0.0"
+  },
+  "packageManager": "yarn@1.22.22",
+  "publishConfig": {
+    "access": "public"
   }
 }
