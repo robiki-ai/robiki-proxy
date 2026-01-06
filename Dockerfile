@@ -1,20 +1,33 @@
 # Builder stage
 FROM node:24-bullseye-slim AS builder
 
+# Build argument to control dependency installation
+ARG INSTALL_DEV_DEPS=true
+
 # Set working directory
 WORKDIR /usr/src
 
 # Copy package files
 COPY package.json yarn.lock tsconfig.json ./
 
-# Install dependencies
-RUN yarn install --frozen-lockfile --silent --non-interactive --ignore-scripts --ignore-optional && yarn cache clean --force
+# Install dependencies (conditionally include dev deps based on build arg)
+RUN if [ "$INSTALL_DEV_DEPS" = "true" ]; then \
+      echo "Installing all dependencies (including dev)..." && \
+      yarn install --frozen-lockfile --silent --non-interactive && yarn cache clean --force; \
+    else \
+      echo "Installing production dependencies..." && \
+      yarn install --frozen-lockfile --production --silent --non-interactive && yarn cache clean --force; \
+    fi
 
 # Copy source code
 COPY ./src ./src/
 
-# Build the application
-RUN yarn build
+# Build the application (if dev deps are installed)
+RUN if [ "$INSTALL_DEV_DEPS" = "true" ]; then \
+      yarn build; \
+    else \
+      echo "Skipping build - no dev dependencies"; \
+    fi
 
 # Production stage
 FROM node:24-bullseye-slim

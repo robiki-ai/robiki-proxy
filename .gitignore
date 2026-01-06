@@ -38,3 +38,10 @@ node_modules
 
 # Mac OS files
 .DS_Store
+
+# Test coverage
+coverage
+*.lcov
+
+# Test artifacts
+.vitest-cache

@@ -9,6 +9,8 @@ export function isMediaFile(path: string): boolean {
     '.mp4',
     '.webm',
     '.ogg',
+    '.mov',
+    '.avi',
     '.mp3',
     '.wav',
     '.flac',
@@ -26,5 +28,8 @@ export function isMediaFile(path: string): boolean {
     '.otf',
     '.ico',
   ];
-  return mediaExtensions.some((ext) => path.endsWith(ext));
+
+  return mediaExtensions.some((ext) => {
+    return path.split('?')[0].split('#')[0].toLowerCase().endsWith(ext);
+  });
 }

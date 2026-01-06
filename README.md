@@ -509,6 +509,68 @@ Ensure your certificate files are readable and in the correct format (PEM). For 
 
 Make sure your WebSocket routes are configured with the correct protocol (ws/wss) and that the target service supports WebSocket connections.
 
+## 🧪 Testing
+
+Robiki Proxy includes a comprehensive test suite covering unit tests, integration tests, and advanced scenarios.
+
+### Running Tests
+
+```bash
+# Run all tests
+yarn test
+
+# Run tests in watch mode
+yarn test:watch
+
+# Run tests with coverage
+yarn test:coverage
+
+# Run tests with UI
+yarn test:ui
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- **Unit Tests**: Configuration, utilities, header conversion, CORS handling
+- **Integration Tests**: HTTP proxying, route resolution, validation, config loading
+- **Advanced Tests**: WebSocket proxying, HTTP/2 streams, concurrent connections
+- **Docker Tests**: Container builds, config loading, runtime behavior
+
+### Docker Tests
+
+Run Docker integration tests:
+
+```bash
+# Full Docker integration test
+yarn test:docker
+
+# Test config loading specifically
+yarn test:docker:config
+
+# Run all tests (unit + integration + Docker)
+yarn test:all
+```
+
+Or using Make:
+
+```bash
+# Quick Docker build test
+make test-docker
+
+# Full integration test suite
+make test-docker-full
+
+# Config loading test
+make test-docker-config
+
+# Docker Compose test
+make test-docker-compose
+```
+
+See the [Docker Tests README](tests/docker/README.md) for more details.
+
 ## 📊 Performance
 
 The proxy is built on Node.js native HTTP/2 implementation and is designed for high performance:
