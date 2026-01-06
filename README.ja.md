@@ -18,6 +18,7 @@
 - **✅ リクエスト検証**：認証、レート制限などのカスタム検証ロジック
 - **🔄 URL リマッピング**：ターゲットサービスに転送する前に URL を変換
 - **📦 デュアル使用**：npm パッケージまたは Docker コンテナとして使用
+- **⚙️ JavaScript & TypeScript 設定サポート**：Docker で関数を使用した `.js` または `.ts` 設定ファイルを使用
 - **🎯 マルチポートサポート**：複数のポートで同時にリッスン
 - **⚡ 高性能**：Node.js ネイティブ HTTP/2 実装に基づく
 
@@ -144,8 +145,8 @@ docker-compose up -d
 URL リマッピングや検証などの高度な機能用：
 
 ```javascript
-// proxy.config.cjs
-module.exports = {
+// proxy.config.js
+export default {
   ports: [443, 8080],
   ssl: {
     key: './certs/key.pem',

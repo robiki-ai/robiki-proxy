@@ -18,6 +18,7 @@
 - **✅ 请求验证**：用于身份验证、速率限制等的自定义验证逻辑
 - **🔄 URL 重映射**：在转发到目标服务之前转换 URL
 - **📦 双重用途**：可作为 npm 包或 Docker 容器使用
+- **⚙️ JavaScript 和 TypeScript 配置支持**：在 Docker 中使用带有函数的 `.js` 或 `.ts` 配置文件
 - **🎯 多端口支持**：同时监听多个端口
 - **⚡ 高性能**：基于 Node.js 原生 HTTP/2 实现
 
@@ -144,8 +145,8 @@ docker-compose up -d
 用于高级功能，如 URL 重映射和验证：
 
 ```javascript
-// proxy.config.cjs
-module.exports = {
+// proxy.config.js
+export default {
   ports: [443, 8080],
   ssl: {
     key: './certs/key.pem',

@@ -18,6 +18,7 @@
 - **✅ Walidacja żądań**: Niestandardowa logika walidacji dla uwierzytelniania, limitowania żądań itp.
 - **🔄 Przekierowywanie URL**: Transformacja URL przed przekazaniem do usług docelowych
 - **📦 Podwójne użycie**: Użyj jako pakiet npm lub kontener Docker
+- **⚙️ Obsługa konfiguracji JavaScript i TypeScript**: Użyj plików konfiguracyjnych `.js` lub `.ts` z funkcjami w Docker
 - **🎯 Obsługa wielu portów**: Nasłuchiwanie na wielu portach jednocześnie
 - **⚡ Wysoka wydajność**: Zbudowany na natywnej implementacji HTTP/2 w Node.js
 
@@ -144,8 +145,8 @@ Prosta deklaratywna konfiguracja:
 Dla zaawansowanych funkcji jak przekierowywanie URL i walidacja:
 
 ```javascript
-// proxy.config.cjs
-module.exports = {
+// proxy.config.js
+export default {
   ports: [443, 8080],
   ssl: {
     key: './certs/key.pem',

@@ -34,7 +34,7 @@ test_result() {
 
 # Build image first
 echo "📦 Building Docker image..."
-docker build --build-arg INSTALL_DEV_DEPS=true -t robiki/proxy:test . > /dev/null 2>&1 || {
+docker build -t robiki/proxy:test . > /dev/null 2>&1 || {
     echo -e "${RED}Failed to build image${NC}"
     exit 1
 }

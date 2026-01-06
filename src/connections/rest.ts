@@ -4,8 +4,7 @@ import { http2HeadersToHttp1Headers, http1ToHttp2Headers } from '../utils/server
 import { day } from '../utils/time';
 import { isMediaFile } from '../utils/files';
 import { type ProxyConfig } from '../utils/config';
-
-const DEBUG = process.env.DEBUG === 'true';
+import { debug } from '../utils/console';
 
 export const restAPIProxyHandler = async (
   req: IncomingMessage,
@@ -22,7 +21,7 @@ export const restAPIProxyHandler = async (
     return;
   }
 
-  if (DEBUG) console.log('HTTP1 rest proxy', `${ssl ? 'https' : 'http'}://${target}${req.url}`, req.headers.host);
+  debug(`HTTP1 rest proxy for ${req.headers.host}`, `${ssl ? 'https' : 'http'}://${target}${req.url}`);
 
   if (remap) req.url = remap(req.url || '');
 
@@ -30,7 +29,7 @@ export const restAPIProxyHandler = async (
   const headers = req.httpVersion === '2.0' ? http2HeadersToHttp1Headers(req.headers) : req.headers;
   const method = req.httpVersion === '2.0' ? req.headers[':method']?.toString() : req.method;
 
-  if (DEBUG) console.log('Proxy Request::', req.url, method, headers);
+  debug(`Proxy Request :: ${req.url} ${method} ::`, headers);
   const proxy = requestFn(
     `${ssl ? 'https' : 'http'}://${target}${req.url || ''}`,
     {
@@ -60,14 +59,14 @@ export const restAPIProxyHandler = async (
       });
 
       proxyRes.on('error', (error) => {
-        if (DEBUG) console.error('Proxy response error:', error);
+        debug('Proxy response error:', error);
         if (!res.destroyed) res.destroy(error);
       });
     }
   );
 
   proxy.on('error', (error) => {
-    if (DEBUG) console.error('Proxy request error:', error);
+    debug('Proxy request error:', error);
     if (!res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'text/plain' });
       res.end('Bad Gateway');
@@ -87,7 +86,7 @@ export const restAPIProxyHandler = async (
   });
 
   req.on('error', (error) => {
-    if (DEBUG) console.error('Client request error:', error);
+    debug('Client request error:', error);
     if (!proxy.destroyed) proxy.destroy(error);
   });
 };

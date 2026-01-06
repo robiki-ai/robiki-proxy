@@ -18,6 +18,7 @@
 - **✅ Validación de solicitudes**: Lógica de validación personalizada para autenticación, limitación de velocidad, etc.
 - **🔄 Remapeo de URL**: Transforma URLs antes de reenviarlas a servicios de destino
 - **📦 Uso dual**: Usa como paquete npm o contenedor Docker
+- **⚙️ Soporte de configuración JavaScript y TypeScript**: Usa archivos de configuración `.js` o `.ts` con funciones en Docker
 - **🎯 Soporte multi-puerto**: Escucha en múltiples puertos simultáneamente
 - **⚡ Alto rendimiento**: Construido sobre la implementación nativa HTTP/2 de Node.js
 
@@ -144,8 +145,8 @@ Configuración declarativa simple:
 Para características avanzadas como remapeo de URL y validación:
 
 ```javascript
-// proxy.config.cjs
-module.exports = {
+// proxy.config.js
+export default {
   ports: [443, 8080],
   ssl: {
     key: './certs/key.pem',

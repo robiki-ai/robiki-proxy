@@ -4,14 +4,12 @@ import { writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 describe('JavaScript Config Loading', () => {
-  const testConfigPath = resolve(__dirname, 'test-config.cjs');
   const originalEnv = process.env.PROXY_CONFIG;
+  let testConfigPath: string;
 
   beforeEach(() => {
-    // Clean up any existing test config
-    if (existsSync(testConfigPath)) {
-      unlinkSync(testConfigPath);
-    }
+    // Use unique file for each test to avoid caching issues
+    testConfigPath = resolve(__dirname, `test-config-${Date.now()}-${Math.random().toString(36).substring(7)}.js`);
   });
 
   afterEach(() => {
@@ -26,15 +24,12 @@ describe('JavaScript Config Loading', () => {
     if (existsSync(testConfigPath)) {
       unlinkSync(testConfigPath);
     }
-
-    // Clear require cache
-    delete require.cache[testConfigPath];
   });
 
-  it('should load CommonJS config file with functions', async () => {
+  it('should load JavaScript config file with functions', async () => {
     // Create a test config file
     const configContent = `
-module.exports = {
+export default {
   routes: {
     'test.example.com': {
       target: 'localhost:3000',
@@ -72,7 +67,7 @@ module.exports = {
 
   it('should execute remap function correctly', async () => {
     const configContent = `
-module.exports = {
+export default {
   routes: {
     'api.example.com': {
       target: 'backend:3000',
@@ -99,7 +94,7 @@ module.exports = {
 
   it('should execute validate function correctly', async () => {
     const configContent = `
-module.exports = {
+export default {
   routes: {
     'secure.example.com': {
       target: 'backend:3000',
@@ -170,7 +165,7 @@ module.exports = {
     process.env.TEST_TARGET = 'custom-backend:4000';
 
     const configContent = `
-module.exports = {
+export default {
   routes: {
     'env.example.com': {
       target: process.env.TEST_TARGET || 'default:3000',
@@ -192,7 +187,7 @@ module.exports = {
 
   it('should handle complex remap logic', async () => {
     const configContent = `
-module.exports = {
+export default {
   routes: {
     'complex.example.com': {
       target: 'backend:3000',
@@ -226,7 +221,7 @@ module.exports = {
 
   it('should merge JS config with programmatic config', async () => {
     const configContent = `
-module.exports = {
+export default {
   routes: {
     'file.example.com': {
       target: 'file-backend:3000',

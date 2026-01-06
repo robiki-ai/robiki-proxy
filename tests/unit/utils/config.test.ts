@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ProxyConfig, loadConfig } from '../../../src/utils/config';
-import type { ServerConfig, RouteConfig } from '../../../src/utils/config';
+import { loadConfig } from '../../../src/utils/config';
+import type { ServerConfig, RouteConfig, ProxyConfig } from '../../../src/utils/config';
 
 describe('ProxyConfig', () => {
-  describe('constructor and initialization', () => {
-    it('should create a ProxyConfig instance with valid config', () => {
+  describe('creation and initialization', () => {
+    it('should create a ProxyConfig object with valid config', async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -13,11 +13,13 @@ describe('ProxyConfig', () => {
         },
       };
 
-      const proxyConfig = new ProxyConfig(config);
-      expect(proxyConfig).toBeInstanceOf(ProxyConfig);
+      const proxyConfig = await loadConfig(config);
+      expect(proxyConfig).toBeDefined();
+      expect(proxyConfig.getConfig).toBeDefined();
+      expect(proxyConfig.getRoute).toBeDefined();
     });
 
-    it('should handle config without SSL', () => {
+    it('should handle config without SSL', async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -26,7 +28,7 @@ describe('ProxyConfig', () => {
         },
       };
 
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
       expect(proxyConfig.getSSL()).toBeUndefined();
     });
   });
@@ -34,7 +36,7 @@ describe('ProxyConfig', () => {
   describe('getRoute', () => {
     let proxyConfig: ProxyConfig;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -49,7 +51,7 @@ describe('ProxyConfig', () => {
           },
         },
       };
-      proxyConfig = new ProxyConfig(config);
+      proxyConfig = await loadConfig(config);
     });
 
     it('should return route for exact host match', () => {
@@ -79,7 +81,7 @@ describe('ProxyConfig', () => {
   describe('getTarget', () => {
     let proxyConfig: ProxyConfig;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -88,7 +90,7 @@ describe('ProxyConfig', () => {
           },
         },
       };
-      proxyConfig = new ProxyConfig(config);
+      proxyConfig = await loadConfig(config);
     });
 
     it('should return target configuration', () => {
@@ -105,40 +107,41 @@ describe('ProxyConfig', () => {
   });
 
   describe('getCorsHeaders', () => {
-    it('should return default CORS headers when no config', () => {
+    it('should return default CORS headers when no config', async () => {
       const config: ServerConfig = {
         routes: {},
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
       const headers = proxyConfig.getCorsHeaders('https://example.com');
 
-      expect(headers['access-control-allow-origin']).toBe('https://example.com');
+      // Default config now includes origin: '*' from loadConfig defaults
+      expect(headers['access-control-allow-origin']).toBe('*');
       expect(headers['access-control-allow-methods']).toBe('*');
       expect(headers['access-control-allow-headers']).toBe('*');
       expect(headers['access-control-allow-credentials']).toBe('true');
     });
 
-    it('should return wildcard CORS when configured', () => {
+    it('should return wildcard CORS when configured', async () => {
       const config: ServerConfig = {
         routes: {},
         cors: {
           origin: '*',
         },
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
       const headers = proxyConfig.getCorsHeaders('https://example.com');
 
       expect(headers['access-control-allow-origin']).toBe('*');
     });
 
-    it('should validate origin against allowed list', () => {
+    it('should validate origin against allowed list', async () => {
       const config: ServerConfig = {
         routes: {},
         cors: {
           origin: ['https://allowed.com', 'https://also-allowed.com'],
         },
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
 
       const allowedHeaders = proxyConfig.getCorsHeaders('https://allowed.com');
       expect(allowedHeaders['access-control-allow-origin']).toBe('https://allowed.com');
@@ -147,7 +150,7 @@ describe('ProxyConfig', () => {
       expect(notAllowedHeaders['access-control-allow-origin']).toBeUndefined();
     });
 
-    it('should apply custom CORS methods and headers', () => {
+    it('should apply custom CORS methods and headers', async () => {
       const config: ServerConfig = {
         routes: {},
         cors: {
@@ -156,7 +159,7 @@ describe('ProxyConfig', () => {
           credentials: false,
         },
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
       const headers = proxyConfig.getCorsHeaders('https://example.com');
 
       expect(headers['access-control-allow-methods']).toBe('GET, POST');
@@ -174,7 +177,7 @@ describe('ProxyConfig', () => {
           },
         },
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
 
       const result = await proxyConfig.validate({
         id: 1,
@@ -207,7 +210,7 @@ describe('ProxyConfig', () => {
           },
         },
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
 
       const allowedResult = await proxyConfig.validate({
         id: 1,
@@ -248,11 +251,11 @@ describe('ProxyConfig', () => {
   });
 
   describe('getPorts', () => {
-    it('should return default ports', () => {
+    it('should return default ports', async () => {
       const config: ServerConfig = {
         routes: {},
       };
-      const proxyConfig = new ProxyConfig(config);
+      const proxyConfig = await loadConfig(config);
       const ports = proxyConfig.getPorts();
 
       expect(ports).toEqual([443, 8080, 9229]);
@@ -269,7 +272,8 @@ describe('ProxyConfig', () => {
         },
       });
 
-      expect(proxyConfig).toBeInstanceOf(ProxyConfig);
+      expect(proxyConfig).toBeDefined();
+      expect(typeof proxyConfig.getConfig).toBe('function');
       expect(proxyConfig.getConfig().cors).toBeDefined();
       expect(proxyConfig.getConfig().cors?.origin).toBe('*');
     });

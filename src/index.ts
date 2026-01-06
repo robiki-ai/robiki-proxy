@@ -106,17 +106,28 @@ export class ProxyServer {
 
 /**
  * Create and start a proxy server
- * Supports all config file types: .json, .cjs, .ts, .js, .mjs
+ * Supports config file types: .json, .ts, .js
+ *
+ * Promise chain:
+ * 1. Load configuration from file/env/programmatic
+ * 2. Initialize SSL certificates
+ * 3. Create proxy server instance
+ * 4. Start listening on configured ports
  */
 export async function createProxy(config?: Partial<ServerConfig>): Promise<ProxyServer> {
-  const proxyConfig = await loadConfig(config);
-  const proxy = new ProxyServer(proxyConfig);
-  await proxy.start();
-  return proxy;
+  return loadConfig(config).then((proxyConfig) => {
+    const proxy = new ProxyServer(proxyConfig);
+    return proxy.start().then(() => proxy);
+  });
 }
 
 /**
  * Create a proxy server with custom handlers
+ *
+ * Promise chain:
+ * 1. Load configuration from file/env/programmatic
+ * 2. Initialize SSL certificates
+ * 3. Create servers with custom handlers
  */
 export async function createCustomProxy(
   config: Partial<ServerConfig> | undefined,
@@ -126,65 +137,65 @@ export async function createCustomProxy(
     websocket?: WebSocketRouter;
   }
 ): Promise<ProxyServer> {
-  const servers: (NET | HTTP)[] = [];
-
   console.log('STARTING CUSTOM PROXY SERVER....');
 
-  const proxyConfig = await loadConfig(config);
-  const ssl = proxyConfig.getSSL();
-  const ports = proxyConfig.getPorts();
+  return loadConfig(config).then((proxyConfig) => {
+    const servers: (NET | HTTP)[] = [];
+    const ssl = proxyConfig.getSSL();
+    const ports = proxyConfig.getPorts();
 
-  // Create bound handlers with config
-  const boundRestHandler = (req: any, res: any) => {
-    /* Health check endpoint */
-    if (req.url === '/robiki-proxy/health' && req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('OK');
-      return;
+    // Create bound handlers with config
+    const boundRestHandler = (req: any, res: any) => {
+      /* Health check endpoint */
+      if (req.url === '/robiki-proxy/health' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('OK');
+        return;
+      }
+      return restAPIProxyHandler(req, res, proxyConfig);
+    };
+    const boundStreamHandler = (stream: any, headers: any) => streamAPIProxyHandler(stream, headers, proxyConfig);
+    const boundWebsocketHandler = (req: any, socket: any, headers: any) =>
+      websocketAPIProxyHandler(req, socket, headers, proxyConfig);
+
+    for (const port of ports) {
+      let server: NET | HTTP;
+
+      if (ssl) {
+        /* Use HTTP/2 with SSL */
+        server = http2(handlers.rest || boundRestHandler, handlers.stream || boundStreamHandler, {
+          ...ssl,
+          port,
+        });
+      } else {
+        /* Use HTTP/1.1 without SSL */
+        server = http(handlers.rest || boundRestHandler, { port });
+      }
+
+      websocket(server, handlers.websocket || boundWebsocketHandler, (info) => proxyConfig.validate(info));
+      servers.push(server);
     }
-    return restAPIProxyHandler(req, res, proxyConfig);
-  };
-  const boundStreamHandler = (stream: any, headers: any) => streamAPIProxyHandler(stream, headers, proxyConfig);
-  const boundWebsocketHandler = (req: any, socket: any, headers: any) =>
-    websocketAPIProxyHandler(req, socket, headers, proxyConfig);
 
-  for (const port of ports) {
-    let server: NET | HTTP;
+    console.log('Custom proxy server started successfully');
 
-    if (ssl) {
-      /* Use HTTP/2 with SSL */
-      server = http2(handlers.rest || boundRestHandler, handlers.stream || boundStreamHandler, {
-        ...ssl,
-        port,
-      });
-    } else {
-      /* Use HTTP/1.1 without SSL */
-      server = http(handlers.rest || boundRestHandler, { port });
-    }
-
-    websocket(server, handlers.websocket || boundWebsocketHandler, (info) => proxyConfig.validate(info));
-    servers.push(server);
-  }
-
-  console.log('Custom proxy server started successfully');
-
-  return {
-    getConfig: () => proxyConfig,
-    start: async () => {},
-    stop: async () => {
-      await Promise.all(
-        servers.map(
-          (server) =>
-            new Promise<void>((resolve, reject) => {
-              server.close((err) => {
-                if (err) reject(err);
-                else resolve();
-              });
-            })
-        )
-      );
-    },
-  } as ProxyServer;
+    return {
+      getConfig: () => proxyConfig,
+      start: async () => {},
+      stop: async () => {
+        await Promise.all(
+          servers.map(
+            (server) =>
+              new Promise<void>((resolve, reject) => {
+                server.close((err) => {
+                  if (err) reject(err);
+                  else resolve();
+                });
+              })
+          )
+        );
+      },
+    } as ProxyServer;
+  });
 }
 
 /* Export connection handlers */

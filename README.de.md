@@ -18,7 +18,7 @@
 - **✅ Anforderungsvalidierung**: Benutzerdefinierte Validierungslogik für Authentifizierung, Rate Limiting usw.
 - **🔄 URL-Remapping**: URLs vor der Weiterleitung an Zieldienste transformieren
 - **📦 Duale Nutzung**: Als npm-Paket oder Docker-Container verwenden
-- **⚙️ JavaScript & TypeScript-Konfigurationsunterstützung**: Verwenden Sie `.cjs` oder `.ts`-Konfigurationsdateien mit Funktionen in Docker
+- **⚙️ JavaScript & TypeScript-Konfigurationsunterstützung**: Verwenden Sie `.js` oder `.ts`-Konfigurationsdateien mit Funktionen in Docker
 - **🎯 Multi-Port-Unterstützung**: Gleichzeitiges Lauschen auf mehreren Ports
 - **⚡ Hohe Leistung**: Basiert auf der nativen HTTP/2-Implementierung von Node.js
 
@@ -145,8 +145,8 @@ Einfache deklarative Konfiguration:
 Für erweiterte Funktionen wie URL-Remapping und Validierung:
 
 ```javascript
-// proxy.config.cjs
-module.exports = {
+// proxy.config.js
+export default {
   ports: [443, 8080],
   ssl: {
     key: './certs/key.pem',

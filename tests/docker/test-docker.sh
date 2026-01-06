@@ -43,7 +43,7 @@ test_result() {
 # Step 1: Build the image
 echo ""
 echo "📦 Step 1: Building Docker image..."
-if docker build --build-arg INSTALL_DEV_DEPS=true -t robiki/proxy:test . > /tmp/docker-build.log 2>&1; then
+if docker build -t robiki/proxy:test . > /tmp/docker-build.log 2>&1; then
     test_result 0 "Docker build successful"
 else
     test_result 1 "Docker build failed" "Check /tmp/docker-build.log for details"

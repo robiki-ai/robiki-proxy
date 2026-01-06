@@ -2,8 +2,7 @@ import { type IncomingHttpHeaders, type IncomingMessage } from 'node:http';
 import { WebSocket } from 'ws';
 import { type TLSWebSocket } from '../utils/server';
 import { type ProxyConfig } from '../utils/config';
-
-const DEBUG = process.env.DEBUG === 'true';
+import { debug } from '../utils/console';
 
 export const websocketAPIProxyHandler = async (
   req: IncomingMessage,
@@ -15,7 +14,7 @@ export const websocketAPIProxyHandler = async (
 
   if (!target) return socket.close();
 
-  if (DEBUG) console.log('HTTP2 websocket proxy', `${ssl ? 'https' : 'http'}://${target}${req.url}`, headers.host);
+  debug(`HTTP2 websocket proxy for ${headers.host}`, `${ssl ? 'https' : 'http'}://${target}${req.url}`);
 
   if (remap) req.url = remap(req.url || '');
 
@@ -44,7 +43,7 @@ export const websocketAPIProxyHandler = async (
   socket.on('close', () => proxy.close());
 
   proxy.on('error', (error) => {
-    if (DEBUG) console.error('WebSocket proxy error:', error);
+    debug('WebSocket proxy error:', error);
     socket.close();
   });
 };

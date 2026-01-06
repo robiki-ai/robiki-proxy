@@ -18,7 +18,7 @@
 - **✅ Request Validation**: Custom validation logic for authentication, rate limiting, etc.
 - **🔄 URL Remapping**: Transform URLs before forwarding to target services
 - **📦 Dual Usage**: Use as npm package or Docker container
-- **⚙️ JavaScript & TypeScript Config Support**: Use `.cjs` or `.ts` config files with functions in Docker
+- **⚙️ JavaScript & TypeScript Config Support**: Use `.js` or `.ts` config files with functions in Docker
 - **🎯 Multi-Port Support**: Listen on multiple ports simultaneously
 - **⚡ High Performance**: Built on Node.js native HTTP/2 implementation
 
@@ -145,8 +145,8 @@ Simple declarative configuration:
 For advanced features like URL remapping and validation:
 
 ```javascript
-// proxy.config.cjs
-module.exports = {
+// proxy.config.js
+export default {
   ports: [443, 8080],
   ssl: {
     key: './certs/key.pem',
@@ -262,17 +262,17 @@ interface RouteConfig {
 
 ## 🐳 Docker Usage
 
-Mount your config file (JSON, .cjs, or .ts):
+Mount your config file (JSON, .js, or .ts):
 
 ```yaml
 services:
   proxy:
     image: robiki/proxy:latest
     volumes:
-      - ./proxy.config.cjs:/app/proxy.config.cjs:ro
-      - ./certs:/app/certs:ro
+      - ./proxy.config.js:/usr/src/proxy.config.js:ro
+      - ./certs:/usr/src/certs:ro
     environment:
-      - PROXY_CONFIG=/app/proxy.config.cjs
+      - PROXY_CONFIG=/usr/src/proxy.config.js
 ```
 
 ## 🔐 SSL Certificates
