@@ -7,7 +7,7 @@
 
 ## 🌍 Languages
 
-[English](README.md) | [Deutsch](README.de.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Polski](README.pl.md) | [Español](README.es.md) | [Русский](README.ru.md)
+[English](docs/README.md) | [Deutsch](docs/README.de.md) | [中文](docs/README.zh.md) | [日本語](docs/README.ja.md) | [Polski](docs/README.pl.md) | [Español](docs/README.es.md) | [Русский](docs/README.ru.md)
 
 ## ✨ Features
 
@@ -332,7 +332,7 @@ Check the `examples/` directory:
 
 ## 🤝 Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Contributions welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details.
 
 ## 📄 License
 
