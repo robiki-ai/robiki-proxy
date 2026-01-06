@@ -74,6 +74,7 @@
   },
   "dependencies": {
     "@types/ws": "8.18.1",
+    "tsx": "4.19.2",
     "ws": "8.19.0"
   },
   "engines": {

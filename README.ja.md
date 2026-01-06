@@ -1,11 +1,11 @@
 # 🚀 Robiki プロキシ
 
-> WebSocket サポート、設定可能なルーティング、CORS、リクエスト検証を備えた高性能で柔軟な HTTP/2 リバースプロキシ。Node.js アプリケーションの npm パッケージとして、またはスタンドアロンの Docker コンテナとして使用できます。ローカル開発環境専用のドメインプロキシとしての使用を想定しています。
+> WebSocket サポート、設定可能なルーティング、CORS、リクエスト検証を備えた高性能な HTTP/2 リバースプロキシ。npm パッケージまたは Docker コンテナとしてローカル開発環境で使用できます。
 
 [![npm version](https://img.shields.io/npm/v/@robiki/proxy.svg)](https://www.npmjs.com/package/@robiki/proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌍 言語 / Languages / Sprachen / 语言 / Języki / Idiomas / Языки
+## 🌍 言語
 
 [English](README.md) | [Deutsch](README.de.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Polski](README.pl.md) | [Español](README.es.md) | [Русский](README.ru.md)
 
@@ -23,49 +23,23 @@
 
 ## 📦 インストール
 
-### npm パッケージとして
+### npm パッケージ
 
 ```bash
 npm install @robiki/proxy
-```
-
-```bash
+# または
 yarn add @robiki/proxy
 ```
 
-### Docker コンテナとして
+### Docker
 
 ```bash
 docker pull robiki/proxy:latest
 ```
 
-### Docker Compose サービスとして
-
-```yaml
-services:
-  proxy:
-    image: robiki/proxy:latest
-    container_name: robiki-proxy
-    restart: unless-stopped
-    ports:
-      - '443:443'
-      - '8080:8080'
-      - '9229:9229'
-    volumes:
-      - ./proxy.config.json:/app/proxy.config.json:ro
-      - ./certs:/app/certs:ro
-    networks:
-      - app-network
-```
-
-## 注意事項
-
-- ローカルで設定されたホストは、ローカルの `hosts` ファイルに追加する必要があります。
-- カスタム証明書を使用する場合は、証明書ファイルを `certs` ディレクトリに追加する必要があります。
-
 ## 🚀 クイックスタート
 
-### npm パッケージとして使用
+### npm パッケージ
 
 ```javascript
 import { createProxy } from '@robiki/proxy';
@@ -88,13 +62,11 @@ const proxy = await createProxy({
     },
   },
 });
-
-console.log('プロキシサーバーが実行中です！');
 ```
 
-### Docker で使用
+### Docker
 
-1. `proxy.config.json` ファイルを作成：
+`proxy.config.json` を作成：
 
 ```json
 {
@@ -108,20 +80,14 @@ console.log('プロキシサーバーが実行中です！');
     "api.example.com": {
       "target": "backend-service:3000",
       "ssl": true
-    },
-    "example.com": {
-      "target": "frontend-service:8080",
-      "ssl": false
     }
   }
 }
 ```
 
-2. `docker-compose.yml` を作成：
+`docker-compose.yml` を作成：
 
 ```yaml
-version: '3.8'
-
 services:
   proxy:
     image: robiki/proxy:latest
@@ -133,25 +99,9 @@ services:
       - ./certs:/app/certs:ro
     environment:
       - PROXY_CONFIG=/app/proxy.config.json
-    networks:
-      - app-network
-
-  backend-service:
-    image: your-backend-image
-    networks:
-      - app-network
-
-  frontend-service:
-    image: your-frontend-image
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 ```
 
-3. サービスを起動：
+起動：
 
 ```bash
 docker-compose up -d
@@ -159,9 +109,9 @@ docker-compose up -d
 
 ## 📖 設定
 
-### 設定ファイル
+### JSON 設定
 
-次の構造で `proxy.config.json` ファイルを作成：
+シンプルな宣言的設定：
 
 ```json
 {
@@ -169,24 +119,17 @@ docker-compose up -d
   "ssl": {
     "key": "./certs/key.pem",
     "cert": "./certs/cert.pem",
-    "ca": "./certs/ca.pem",
     "allowHTTP1": true
   },
   "cors": {
     "origin": "*",
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allowedHeaders": ["Content-Type", "Authorization"],
-    "credentials": true,
-    "maxAge": 86400
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "credentials": true
   },
   "routes": {
     "api.example.com": {
-      "target": "backend-service:3000",
-      "ssl": true,
-      "cors": {
-        "origin": ["https://example.com"],
-        "credentials": true
-      }
+      "target": "backend:3000",
+      "ssl": true
     },
     "*.example.com": {
       "target": "wildcard-service:4000",
@@ -196,78 +139,32 @@ docker-compose up -d
 }
 ```
 
-### 環境変数
+### JavaScript 設定
 
-環境変数を使用してプロキシを設定することもできます：
-
-```bash
-# SSL 設定
-SSL_KEY=/app/certs/key.pem
-SSL_CERT=/app/certs/cert.pem
-SSL_CA=/app/certs/ca.pem
-SSL_ALLOW_HTTP1=true
-
-# CORS 設定
-CORS_ORIGIN=*
-CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
-CORS_HEADERS=Content-Type,Authorization
-CORS_CREDENTIALS=true
-
-# デバッグモード
-DEBUG=true  # プロキシ接続とエラーの詳細なログを有効にする
-```
-
-## 🎯 高度な使用法
-
-### URL リマッピング
-
-ターゲットサービスに転送する前に URL を変換：
+URL リマッピングや検証などの高度な機能用：
 
 ```javascript
-const config = {
-  routes: {
-    'api.example.com': {
-      target: 'backend:3000',
-      ssl: true,
-      remap: (url) => {
-        // /api プレフィックスを削除
-        return url.replace(/^\/api/, '');
-      },
-    },
-  },
-};
-```
-
-### リクエスト検証
-
-認証、レート制限などのカスタム検証ロジックを追加：
-
-```javascript
-const config = {
-  // グローバル検証
-  validate: async (info) => {
-    if (!info.headers.authorization) {
-      return {
-        status: false,
-        code: 401,
-        message: '認証されていません',
-        headers: { 'www-authenticate': 'Bearer' },
-      };
-    }
-    return { status: true };
+// proxy.config.cjs
+module.exports = {
+  ports: [443, 8080],
+  ssl: {
+    key: './certs/key.pem',
+    cert: './certs/cert.pem',
+    allowHTTP1: true,
   },
   routes: {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // ルート固有の検証
+      // URL リマッピング
+      remap: (url) => url.replace(/^\/api/, ''),
+      // リクエスト検証
       validate: async (info) => {
-        const rateLimit = await checkRateLimit(info.remoteAddress);
-        if (!rateLimit.allowed) {
+        if (!info.headers.authorization) {
           return {
             status: false,
-            code: 429,
-            message: 'リクエストが多すぎます',
+            code: 401,
+            message: 'Unauthorized',
           };
         }
         return { status: true };
@@ -277,93 +174,80 @@ const config = {
 };
 ```
 
-### カスタム CORS 設定
+### TypeScript 設定
 
-CORS をグローバルまたはルート別に設定：
+完全な IDE サポート付きの型安全な設定：
 
-```javascript
-const config = {
-  // グローバル CORS
-  cors: {
-    origin: ['https://example.com', 'https://www.example.com'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400,
+```typescript
+// proxy.config.ts
+import type { ServerConfig, ConnectionInfo } from '@robiki/proxy';
+
+const config: ServerConfig = {
+  ports: [443, 8080],
+  ssl: {
+    key: './certs/key.pem',
+    cert: './certs/cert.pem',
+    allowHTTP1: true,
   },
   routes: {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // ルート固有の CORS（グローバルを上書き）
-      cors: {
-        origin: '*',
-        credentials: false,
+      remap: (url: string) => url.replace(/^\/api/, ''),
+      validate: async (info: ConnectionInfo) => {
+        if (!info.headers['x-api-key']) {
+          return { status: false, code: 401, message: 'API Key Required' };
+        }
+        return { status: true };
       },
     },
   },
 };
+
+export default config;
 ```
 
-### カスタムハンドラー
+### 環境変数
 
-高度なユースケース用のカスタムリクエストハンドラーを作成：
+```bash
+# SSL 設定
+SSL_KEY=/app/certs/key.pem
+SSL_CERT=/app/certs/cert.pem
+SSL_ALLOW_HTTP1=true
 
-```javascript
-import { createCustomProxy } from '@robiki/proxy';
+# CORS 設定
+CORS_ORIGIN=*
+CORS_METHODS=GET,POST,PUT,DELETE
+CORS_CREDENTIALS=true
 
-const customRestHandler = async (req, res) => {
-  if (req.url === '/health') {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ status: 'ok' }));
-  }
-  // デフォルトのプロキシ動作にフォールバック
-  const { restAPIProxyHandler } = await import('@robiki/proxy/connections');
-  return restAPIProxyHandler(req, res);
-};
-
-const proxy = await createCustomProxy(config, {
-  rest: customRestHandler,
-  websocket: customWebSocketHandler,
-  stream: customStreamHandler,
-});
+# デバッグモード
+DEBUG=true
 ```
 
 ## 🔧 API リファレンス
 
-### `createProxy(config: ServerConfig): Promise<ProxyServer>`
+### `createProxy(config: ServerConfig)`
 
-指定された設定でプロキシサーバーを作成して起動します。
+プロキシサーバーを作成して起動します。
 
-**パラメータ：**
-
-- `config`：サーバー設定オブジェクト
-
-**戻り値：** `ProxyServer` インスタンスに解決される Promise
-
-### `ProxyServer`
-
-**メソッド：**
-
-- `start()`：プロキシサーバーを起動
-- `stop()`：プロキシサーバーを停止
-- `getConfig()`：現在の設定を取得
-
-### 設定タイプ
-
-#### `ServerConfig`
+**ServerConfig:**
 
 ```typescript
 interface ServerConfig {
   ports?: number[];
-  ssl?: CertificateConfig;
+  ssl?: {
+    key: string;
+    cert: string;
+    ca?: string;
+    allowHTTP1?: boolean;
+  };
   routes: Record<string, RouteConfig>;
   cors?: CorsConfig;
   validate?: (info: ConnectionInfo) => Promise<ForwardValidationResult>;
 }
 ```
 
-#### `RouteConfig`
+**RouteConfig:**
 
 ```typescript
 interface RouteConfig {
@@ -375,126 +259,79 @@ interface RouteConfig {
 }
 ```
 
-#### `CorsConfig`
+## 🐳 Docker 使用
 
-```typescript
-interface CorsConfig {
-  origin?: string | string[];
-  methods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  credentials?: boolean;
-  maxAge?: number;
-}
-```
-
-#### `ConnectionInfo`
-
-```typescript
-interface ConnectionInfo {
-  id: number;
-  method: string;
-  path: string;
-  remoteAddress: string;
-  scheme: string;
-  authority: string;
-  origin: string;
-  headers: IncomingHttpHeaders;
-  query: URLSearchParams;
-  type: RequestType;
-}
-```
-
-## 🐳 Docker の使用
-
-### 別のプロジェクトで使用
-
-1. `docker-compose.yml` にプロキシを追加：
+設定ファイル（JSON、.cjs、または .ts）をマウント：
 
 ```yaml
 services:
   proxy:
     image: robiki/proxy:latest
-    ports:
-      - '443:443'
-      - '8080:8080'
     volumes:
-      - ./proxy.config.json:/app/proxy.config.json:ro
+      - ./proxy.config.cjs:/app/proxy.config.cjs:ro
       - ./certs:/app/certs:ro
-    networks:
-      - your-network
-
-  your-service:
-    image: your-service-image
-    networks:
-      - your-network
+    environment:
+      - PROXY_CONFIG=/app/proxy.config.cjs
 ```
 
-2. `proxy.config.json` でサービスを指すようにルートを設定
+## 🔐 SSL 証明書
 
-3. スタックを起動：
-
-```bash
-docker-compose up -d
-```
-
-### カスタムイメージのビルド
-
-カスタム Dockerfile を作成：
-
-```dockerfile
-FROM robiki/proxy:latest
-
-# 設定をコピー
-COPY proxy.config.json /app/proxy.config.json
-COPY certs /app/certs
-
-# 環境変数を設定
-ENV PROXY_CONFIG=/app/proxy.config.json
-```
-
-## 📚 例
-
-より多くの使用例については、`examples/` ディレクトリを確認してください：
-
-- `basic-usage.js` - シンプルなプロキシ設定
-- `advanced-usage.js` - 高度な機能（検証、CORS、リマッピング）
-- `custom-handlers.js` - カスタムリクエストハンドラー
-- `docker-compose.example.yml` - 完全な Docker 設定
-
-## 🔐 SSL/TLS 証明書
-
-### 自己署名証明書の生成
-
-開発用：
+### 開発環境（自己署名）
 
 ```bash
 mkdir -p certs
 openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes
 ```
 
-### Let's Encrypt の使用
-
-本番環境では、Let's Encrypt 証明書を使用：
+### 本番環境（Let's Encrypt）
 
 ```bash
 certbot certonly --standalone -d example.com
 ```
 
-次に、設定で参照：
+## 🛠️ トラブルシューティング
 
-```json
-{
-  "ssl": {
-    "key": "/etc/letsencrypt/live/example.com/privkey.pem",
-    "cert": "/etc/letsencrypt/live/example.com/fullchain.pem"
-  }
-}
+### デバッグモード
+
+詳細なログを有効化：
+
+```bash
+DEBUG=true node your-script.js
+# または
+docker run -e DEBUG=true robiki/proxy:latest
 ```
+
+### ポートが既に使用中
+
+```bash
+lsof -ti:443 | xargs kill -9
+```
+
+## 🧪 テスト
+
+```bash
+# すべてのテストを実行
+yarn test
+
+# カバレッジ付き
+yarn test:coverage
+
+# Docker テスト
+yarn test:docker
+```
+
+## 📚 例
+
+`examples/` ディレクトリを参照：
+
+- `basic-usage.js` - シンプルなプロキシ設定
+- `advanced-usage.js` - 検証、CORS、リマッピング
+- `custom-handlers.js` - カスタムリクエストハンドラ
+- `docker-compose.example.yml` - Docker 設定
 
 ## 🤝 貢献
 
-貢献を歓迎します！お気軽にプルリクエストを送信してください。
+貢献を歓迎します！詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ## 📄 ライセンス
 
@@ -504,136 +341,4 @@ MIT © Robiki sp. z o.o.
 
 - [GitHub リポジトリ](https://github.com/robiki-ai/robiki-proxy)
 - [npm パッケージ](https://www.npmjs.com/package/@robiki/proxy)
-- [イシュートラッカー](https://github.com/robiki-ai/robiki-proxy/issues)
-
-## 💡 ユースケース
-
-- **マイクロサービスアーキテクチャ**：ドメイン/パスに基づいて異なるサービスにリクエストをルーティング
-- **開発環境**：複数のサービスをテストするためのローカルプロキシ
-- **API ゲートウェイ**：認証とレート制限を備えた集中エントリポイント
-- **SSL ターミネーション**：プロキシレベルで SSL/TLS を処理
-- **CORS 管理**：集中型 CORS 設定
-- **ロードバランシング**：複数のインスタンスにトラフィックを分散（カスタムハンドラーを使用）
-
-## 🛠️ トラブルシューティング
-
-### デバッグモード
-
-接続の問題をトラブルシューティングするために詳細なログを有効にする：
-
-```bash
-# デバッグモードを有効にする
-DEBUG=true node your-proxy-script.js
-
-# または Docker で
-docker run -e DEBUG=true robiki/proxy:latest
-
-# または docker-compose.yml で
-services:
-  proxy:
-    image: robiki/proxy:latest
-    environment:
-      - DEBUG=true
-```
-
-`DEBUG=true` の場合、プロキシは以下をログに記録します：
-- すべてのプロキシ接続試行（REST、WebSocket、HTTP/2 ストリーム）
-- リクエストとレスポンスの詳細
-- 接続エラーとタイムアウト
-- プロキシエラーとクライアントエラー
-
-### ポートが既に使用中
-
-プロキシは、設定されたポートのプロセスを自動的に終了しようとします。失敗した場合は、手動でポートを解放：
-
-```bash
-lsof -ti:443 | xargs kill -9
-lsof -ti:8080 | xargs kill -9
-```
-
-### SSL 証明書エラー
-
-証明書ファイルが読み取り可能で、正しい形式（PEM）であることを確認してください。開発では、自己署名証明書を使用します。
-
-### WebSocket 接続の問題
-
-WebSocket ルートが正しいプロトコル（ws/wss）で設定されており、ターゲットサービスが WebSocket 接続をサポートしていることを確認してください。
-
-## 🧪 テスト
-
-Robiki Proxy には、ユニットテスト、統合テスト、高度なシナリオをカバーする包括的なテストスイートが含まれています。
-
-### テストの実行
-
-```bash
-# すべてのテストを実行
-yarn test
-
-# ウォッチモードでテストを実行
-yarn test:watch
-
-# カバレッジ付きでテストを実行
-yarn test:coverage
-
-# UI でテストを実行
-yarn test:ui
-```
-
-### テストカバレッジ
-
-テストスイートには以下が含まれます：
-
-- **ユニットテスト**：設定、ユーティリティ、ヘッダー変換、CORS 処理
-- **統合テスト**：HTTP プロキシ、ルート解決、検証、設定読み込み
-- **高度なテスト**：WebSocket プロキシ、HTTP/2 ストリーム、同時接続
-- **Docker テスト**：コンテナビルド、設定読み込み、ランタイム動作
-
-### Docker テスト
-
-Docker 統合テストを実行：
-
-```bash
-# 完全な Docker 統合テスト
-yarn test:docker
-
-# 設定読み込みを特にテスト
-yarn test:docker:config
-
-# すべてのテストを実行（ユニット + 統合 + Docker）
-yarn test:all
-```
-
-または Make を使用：
-
-```bash
-# クイック Docker ビルドテスト
-make test-docker
-
-# 完全な統合テストスイート
-make test-docker-full
-
-# 設定読み込みテスト
-make test-docker-config
-
-# Docker Compose テスト
-make test-docker-compose
-```
-
-詳細については、[Docker テスト README](tests/docker/README.md) を参照してください。
-
-## 📊 パフォーマンス
-
-このプロキシは Node.js ネイティブ HTTP/2 実装に基づいており、高性能向けに設計されています：
-
-- 効率的なストリーム処理
-- 最小限のオーバーヘッド
-- コネクションプーリング
-- 自動 HTTP/1.1 フォールバック
-
-本番環境デプロイメントでは、以下を検討してください：
-
-- プロセスマネージャーの使用（PM2、systemd）
-- マルチコアシステム用のクラスタリングの有効化
-- ヘルスチェックによる監視
-- 適切なログ記録の設定
-
+- [Issue トラッカー](https://github.com/robiki-ai/robiki-proxy/issues)

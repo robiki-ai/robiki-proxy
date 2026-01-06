@@ -54,7 +54,7 @@ describe('ProxyServer Integration Tests', () => {
   });
 
   describe('ProxyServer class', () => {
-    it('should create a ProxyServer instance', () => {
+    it('should create a ProxyServer instance', async () => {
       const config: ServerConfig = {
         routes: {
           'test.local': {
@@ -63,12 +63,12 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       expect(proxy).toBeInstanceOf(ProxyServer);
       expect(proxy.getConfig()).toBeDefined();
     });
 
-    it('should get configuration', () => {
+    it('should get configuration', async () => {
       const config: ServerConfig = {
         routes: {
           'test.local': {
@@ -80,7 +80,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const proxyConfig = proxy.getConfig();
 
       expect(proxyConfig.getConfig().routes).toBeDefined();
@@ -90,7 +90,7 @@ describe('ProxyServer Integration Tests', () => {
   });
 
   describe('Configuration loading', () => {
-    it('should load config with routes', () => {
+    it('should load config with routes', async () => {
       const config: Partial<ServerConfig> = {
         routes: {
           'example.com': {
@@ -103,7 +103,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const loadedConfig = proxy.getConfig().getConfig();
 
       expect(loadedConfig.routes['example.com']).toBeDefined();
@@ -112,7 +112,7 @@ describe('ProxyServer Integration Tests', () => {
       expect(loadedConfig.routes['api.example.com'].ssl).toBe(true);
     });
 
-    it('should apply default CORS configuration', () => {
+    it('should apply default CORS configuration', async () => {
       const config: Partial<ServerConfig> = {
         routes: {
           'example.com': {
@@ -121,13 +121,13 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const loadedConfig = proxy.getConfig().getConfig();
 
       expect(loadedConfig.cors).toBeDefined();
     });
 
-    it('should merge custom CORS configuration', () => {
+    it('should merge custom CORS configuration', async () => {
       const config: Partial<ServerConfig> = {
         routes: {
           'example.com': {
@@ -140,7 +140,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const loadedConfig = proxy.getConfig().getConfig();
 
       expect(loadedConfig.cors?.origin).toBe('https://specific-origin.com');
@@ -151,7 +151,7 @@ describe('ProxyServer Integration Tests', () => {
   describe('Route resolution', () => {
     let proxy: ProxyServer;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       const config: ServerConfig = {
         routes: {
           'exact.com': {
@@ -167,7 +167,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      proxy = new ProxyServer(loadConfig(config));
+      proxy = new ProxyServer(await loadConfig(config));
     });
 
     it('should resolve exact domain match', () => {
@@ -201,7 +201,7 @@ describe('ProxyServer Integration Tests', () => {
   });
 
   describe('URL remapping', () => {
-    it('should apply URL remap function', () => {
+    it('should apply URL remap function', async () => {
       const config: ServerConfig = {
         routes: {
           'remap.com': {
@@ -211,14 +211,14 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const route = proxy.getConfig().getRoute('remap.com');
 
       expect(route?.remap).toBeDefined();
       expect(route?.remap?.('/api/v1/users')).toBe('/api/v2/users');
     });
 
-    it('should handle multiple remap patterns', () => {
+    it('should handle multiple remap patterns', async () => {
       const config: ServerConfig = {
         routes: {
           'remap.com': {
@@ -230,7 +230,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const route = proxy.getConfig().getRoute('remap.com');
 
       expect(route?.remap?.('/old-api/v1/users')).toBe('/new-api/v2/users');
@@ -253,7 +253,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const validResult = await proxy.getConfig().validate({
         id: 1,
@@ -306,7 +306,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const getResult = await proxy.getConfig().validate({
         id: 1,
@@ -346,7 +346,7 @@ describe('ProxyServer Integration Tests', () => {
   });
 
   describe('CORS handling', () => {
-    it('should generate CORS headers for allowed origin', () => {
+    it('should generate CORS headers for allowed origin', async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -358,13 +358,13 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const headers = proxy.getConfig().getCorsHeaders('https://allowed.com');
 
       expect(headers['access-control-allow-origin']).toBe('https://allowed.com');
     });
 
-    it('should not set origin for disallowed origin', () => {
+    it('should not set origin for disallowed origin', async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -376,13 +376,13 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const headers = proxy.getConfig().getCorsHeaders('https://not-allowed.com');
 
       expect(headers['access-control-allow-origin']).toBeUndefined();
     });
 
-    it('should use route-specific CORS config', () => {
+    it('should use route-specific CORS config', async () => {
       const config: ServerConfig = {
         routes: {
           'example.com': {
@@ -398,7 +398,7 @@ describe('ProxyServer Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const headers = proxy.getConfig().getCorsHeaders('https://route-specific.com', 'example.com');
 
       expect(headers['access-control-allow-origin']).toBe('https://route-specific.com');
@@ -417,7 +417,7 @@ describe('ProxyServer Integration Tests', () => {
         ports: [8080],
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       await proxy.start();
 
       try {
@@ -460,7 +460,7 @@ describe('ProxyServer Integration Tests', () => {
         ports: [8080],
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       await proxy.start();
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -508,7 +508,7 @@ describe('ProxyServer Integration Tests', () => {
         ports: [8080],
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       await proxy.start();
 
       await new Promise((resolve) => setTimeout(resolve, 50));

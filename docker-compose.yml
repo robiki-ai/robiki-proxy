@@ -13,12 +13,8 @@ services:
       - "8080:8080"
       - "9229:9229"
     volumes:
-      # Mount configuration file
       - ./proxy.config.json:/usr/src/proxy.config.json:ro
-      # Mount certificates directory
       - ./certs:/usr/src/certs:ro
-      # Optional: mount custom configuration
-      - ./config:/usr/src/config:ro
     env_file:
       - .env
     networks:

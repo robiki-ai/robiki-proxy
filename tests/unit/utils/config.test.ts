@@ -260,8 +260,8 @@ describe('ProxyConfig', () => {
   });
 
   describe('loadConfig', () => {
-    it('should load config with defaults', () => {
-      const proxyConfig = loadConfig({
+    it('should load config with defaults', async () => {
+      const proxyConfig = await loadConfig({
         routes: {
           'example.com': {
             target: 'localhost:3000',
@@ -274,8 +274,8 @@ describe('ProxyConfig', () => {
       expect(proxyConfig.getConfig().cors?.origin).toBe('*');
     });
 
-    it('should merge programmatic config with defaults', () => {
-      const proxyConfig = loadConfig({
+    it('should merge programmatic config with defaults', async () => {
+      const proxyConfig = await loadConfig({
         routes: {
           'example.com': {
             target: 'localhost:3000',

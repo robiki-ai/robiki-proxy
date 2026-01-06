@@ -50,14 +50,13 @@ RUN yarn install --frozen-lockfile --production --silent --non-interactive --ign
 # Copy built files from builder
 COPY --from=builder /usr/src/dist ./dist
 
-# Create directory for certificates
+# Create directories for certificates and config
 RUN mkdir -p /usr/src/certs
 
 # Set environment variables
 ENV PATH=/usr/src/node_modules/.bin:$PATH
 ENV NODE_PATH=.
 ENV NODE_ENV=production
-ENV PROXY_CONFIG=/usr/src/proxy.config.json
 
 # Expose ports
 EXPOSE 443 8080 9229
@@ -73,5 +72,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/robiki-proxy/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the proxy with dumb-init
-CMD ["dumb-init", "node", "--inspect=0.0.0.0:9229", "dist/index.js"]
+CMD ["dumb-init", "node", "dist/index.js"]
 

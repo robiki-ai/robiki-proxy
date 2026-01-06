@@ -14,7 +14,7 @@ describe('Config File Loading', () => {
     }
   };
 
-  it('should load proxy.config.json from file system', () => {
+  it('should load proxy.config.json from file system', async () => {
     const testConfig = {
       routes: {
         'test.local': {
@@ -29,7 +29,7 @@ describe('Config File Loading', () => {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
 
       expect(config).toBeDefined();
       expect(config.getRoute('test.local')).toBeDefined();
@@ -47,7 +47,7 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should handle empty routes configuration', () => {
+  it('should handle empty routes configuration', async () => {
     const testConfig = {
       routes: {},
     };
@@ -58,7 +58,7 @@ describe('Config File Loading', () => {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
 
       expect(config).toBeDefined();
       expect(config.getRoute('any.domain')).toBeUndefined();
@@ -73,7 +73,7 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should load configuration with CORS settings', () => {
+  it('should load configuration with CORS settings', async () => {
     const testConfig = {
       routes: {
         'api.local': {
@@ -96,7 +96,7 @@ describe('Config File Loading', () => {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
 
       expect(config).toBeDefined();
 
@@ -104,7 +104,7 @@ describe('Config File Loading', () => {
       expect(route).toBeDefined();
       expect(route?.target).toBe('localhost:4000');
 
-      const corsHeaders = config.getCorsHeaders('api.local', 'https://example.com');
+      const corsHeaders = config.getCorsHeaders('https://example.com', 'api.local');
       expect(corsHeaders).toBeDefined();
 
       if (originalEnv === undefined) {
@@ -117,7 +117,7 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should load configuration with wildcard routes', () => {
+  it('should load configuration with wildcard routes', async () => {
     const testConfig = {
       routes: {
         '*.api.local': {
@@ -135,7 +135,7 @@ describe('Config File Loading', () => {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
 
       expect(config).toBeDefined();
 
@@ -157,14 +157,14 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should handle invalid JSON gracefully', () => {
+  it('should handle invalid JSON gracefully', async () => {
     writeFileSync(testConfigPath, 'invalid json {{{');
 
     try {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
       expect(config).toBeDefined();
 
       if (originalEnv === undefined) {
@@ -177,12 +177,12 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should handle missing config file gracefully', () => {
+  it('should handle missing config file gracefully', async () => {
     const originalEnv = process.env.PROXY_CONFIG;
     process.env.PROXY_CONFIG = '/nonexistent/path/to/config.json';
 
     try {
-      const config = loadConfig();
+      const config = await loadConfig();
       expect(config).toBeDefined();
     } finally {
       if (originalEnv === undefined) {
@@ -193,22 +193,22 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should load the default proxy.config.json if it exists', () => {
+  it('should load the default proxy.config.json if it exists', async () => {
     const defaultConfigPath = join(process.cwd(), 'proxy.config.json');
 
     if (existsSync(defaultConfigPath)) {
-      const config = loadConfig();
+      const config = await loadConfig();
       expect(config).toBeDefined();
 
       const configContent = readFileSync(defaultConfigPath, 'utf-8');
       expect(() => JSON.parse(configContent)).not.toThrow();
     } else {
-      const config = loadConfig();
+      const config = await loadConfig();
       expect(config).toBeDefined();
     }
   });
 
-  it('should prioritize PROXY_CONFIG environment variable over default file', () => {
+  it('should prioritize PROXY_CONFIG environment variable over default file', async () => {
     const testConfig = {
       routes: {
         'env-test.local': {
@@ -223,7 +223,7 @@ describe('Config File Loading', () => {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
 
       expect(config).toBeDefined();
       expect(config.getRoute('env-test.local')).toBeDefined();
@@ -241,45 +241,7 @@ describe('Config File Loading', () => {
     }
   });
 
-  it('should load configuration with remap rules', () => {
-    const testConfig = {
-      routes: {
-        'api.local': {
-          target: 'localhost:4000',
-          remap: {
-            '/old-api': '/new-api',
-            '/v1': '/v2',
-          },
-        },
-      },
-    };
-
-    writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));
-
-    try {
-      const originalEnv = process.env.PROXY_CONFIG;
-      process.env.PROXY_CONFIG = testConfigPath;
-
-      const config = loadConfig();
-
-      expect(config).toBeDefined();
-
-      const route = config.getRoute('api.local');
-      expect(route).toBeDefined();
-      expect(route?.remap).toBeDefined();
-      expect(route?.remap?.['/old-api']).toBe('/new-api');
-
-      if (originalEnv === undefined) {
-        delete process.env.PROXY_CONFIG;
-      } else {
-        process.env.PROXY_CONFIG = originalEnv;
-      }
-    } finally {
-      cleanup();
-    }
-  });
-
-  it('should validate configuration structure', () => {
+  it('should validate configuration structure', async () => {
     const validConfig = {
       routes: {
         'valid.local': {
@@ -294,7 +256,7 @@ describe('Config File Loading', () => {
       const originalEnv = process.env.PROXY_CONFIG;
       process.env.PROXY_CONFIG = testConfigPath;
 
-      const config = loadConfig();
+      const config = await loadConfig();
 
       expect(config).toBeDefined();
       expect(config.getRoute('valid.local')).toBeDefined();

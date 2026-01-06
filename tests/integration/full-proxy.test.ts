@@ -77,7 +77,7 @@ describe('Full Proxy Integration Tests', () => {
   });
 
   describe('Multi-backend routing', () => {
-    it('should route to different backends based on host', () => {
+    it('should route to different backends based on host', async () => {
       const config: ServerConfig = {
         routes: {
           'service1.local': {
@@ -89,7 +89,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const route1 = proxy.getConfig().getRoute('service1.local');
       const route2 = proxy.getConfig().getRoute('service2.local');
@@ -98,7 +98,7 @@ describe('Full Proxy Integration Tests', () => {
       expect(route2?.target).toBe(`127.0.0.1:${mockBackend2Port}`);
     });
 
-    it('should handle wildcard routing', () => {
+    it('should handle wildcard routing', async () => {
       const config: ServerConfig = {
         routes: {
           '*.api.local': {
@@ -110,7 +110,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const apiRoute = proxy.getConfig().getRoute('v1.api.local');
       const adminRoute = proxy.getConfig().getRoute('panel.admin.local');
@@ -121,7 +121,7 @@ describe('Full Proxy Integration Tests', () => {
   });
 
   describe('Complex routing scenarios', () => {
-    it('should handle route-specific CORS', () => {
+    it('should handle route-specific CORS', async () => {
       const config: ServerConfig = {
         routes: {
           'public.local': {
@@ -142,7 +142,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const publicCors = proxy.getConfig().getCorsHeaders('https://any.com', 'public.local');
       expect(publicCors['access-control-allow-origin']).toBe('*');
@@ -153,7 +153,7 @@ describe('Full Proxy Integration Tests', () => {
       expect(restrictedCors['access-control-allow-methods']).toBe('GET');
     });
 
-    it('should handle route-specific URL remapping', () => {
+    it('should handle route-specific URL remapping', async () => {
       const config: ServerConfig = {
         routes: {
           'old-api.local': {
@@ -167,7 +167,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const oldApiRoute = proxy.getConfig().getRoute('old-api.local');
       const newApiRoute = proxy.getConfig().getRoute('new-api.local');
@@ -195,7 +195,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       // Public route should always pass
       const publicResult = await proxy.getConfig().validate({
@@ -254,7 +254,7 @@ describe('Full Proxy Integration Tests', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle missing host header gracefully', () => {
+    it('should handle missing host header gracefully', async () => {
       const config: ServerConfig = {
         routes: {
           'example.local': {
@@ -263,24 +263,24 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const { target } = proxy.getConfig().getTarget('');
 
       expect(target).toBeUndefined();
     });
 
-    it('should handle empty routes configuration', () => {
+    it('should handle empty routes configuration', async () => {
       const config: ServerConfig = {
         routes: {},
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const route = proxy.getConfig().getRoute('any.host');
 
       expect(route).toBeUndefined();
     });
 
-    it('should handle complex wildcard patterns', () => {
+    it('should handle complex wildcard patterns', async () => {
       const config: ServerConfig = {
         routes: {
           '*.*.example.local': {
@@ -289,7 +289,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
 
       const route1 = proxy.getConfig().getRoute('api.v1.example.local');
       const route2 = proxy.getConfig().getRoute('admin.panel.example.local');
@@ -301,7 +301,7 @@ describe('Full Proxy Integration Tests', () => {
       expect(route3?.target).toBe(`127.0.0.1:${mockBackend1Port}`);
     });
 
-    it('should handle URL with query parameters in remap', () => {
+    it('should handle URL with query parameters in remap', async () => {
       const config: ServerConfig = {
         routes: {
           'example.local': {
@@ -315,7 +315,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const route = proxy.getConfig().getRoute('example.local');
 
       expect(route?.remap?.('/old/path?param=value')).toBe('/new/path?param=value');
@@ -324,7 +324,7 @@ describe('Full Proxy Integration Tests', () => {
   });
 
   describe('Configuration merging', () => {
-    it('should merge global and route-specific configs', () => {
+    it('should merge global and route-specific configs', async () => {
       const config: ServerConfig = {
         routes: {
           'example.local': {
@@ -340,7 +340,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const headers = proxy.getConfig().getCorsHeaders('https://test.com', 'example.local');
 
       // Should have route-specific methods
@@ -349,7 +349,7 @@ describe('Full Proxy Integration Tests', () => {
       expect(headers['access-control-allow-origin']).toBe('https://test.com');
     });
 
-    it('should prioritize route config over global config', () => {
+    it('should prioritize route config over global config', async () => {
       const config: ServerConfig = {
         routes: {
           'example.local': {
@@ -364,7 +364,7 @@ describe('Full Proxy Integration Tests', () => {
         },
       };
 
-      const proxy = new ProxyServer(loadConfig(config));
+      const proxy = new ProxyServer(await loadConfig(config));
       const headers = proxy.getConfig().getCorsHeaders('https://specific.com', 'example.local');
 
       expect(headers['access-control-allow-origin']).toBe('https://specific.com');

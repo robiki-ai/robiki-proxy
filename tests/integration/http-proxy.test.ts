@@ -77,7 +77,7 @@ describe('HTTP Proxy Handler Integration Tests', () => {
       },
     };
 
-    proxyConfig = loadConfig(config);
+    proxyConfig = await loadConfig(config);
   });
 
   afterAll(async () => {

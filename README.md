@@ -1,11 +1,11 @@
 # 🚀 Robiki Proxy
 
-> A high-performance, flexible HTTP/2 reverse proxy with WebSocket support, configurable routing, CORS, and request validation. Use it as an npm package in your Node.js application or as a standalone Docker container. Meant to be used as a domain proxy for local development environments only.
+> A high-performance HTTP/2 reverse proxy with WebSocket support, configurable routing, CORS, and request validation. Use as an npm package or Docker container for local development environments.
 
 [![npm version](https://img.shields.io/npm/v/@robiki/proxy.svg)](https://www.npmjs.com/package/@robiki/proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌍 Languages / Sprachen / 语言 / 言語 / Języki / Idiomas / Языки
+## 🌍 Languages
 
 [English](README.md) | [Deutsch](README.de.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Polski](README.pl.md) | [Español](README.es.md) | [Русский](README.ru.md)
 
@@ -18,54 +18,29 @@
 - **✅ Request Validation**: Custom validation logic for authentication, rate limiting, etc.
 - **🔄 URL Remapping**: Transform URLs before forwarding to target services
 - **📦 Dual Usage**: Use as npm package or Docker container
+- **⚙️ JavaScript & TypeScript Config Support**: Use `.cjs` or `.ts` config files with functions in Docker
 - **🎯 Multi-Port Support**: Listen on multiple ports simultaneously
 - **⚡ High Performance**: Built on Node.js native HTTP/2 implementation
 
 ## 📦 Installation
 
-### As an npm Package
+### npm Package
 
 ```bash
 npm install @robiki/proxy
-```
-
-```bash
+# or
 yarn add @robiki/proxy
 ```
 
-### As a Docker Container
+### Docker
 
 ```bash
 docker pull robiki/proxy:latest
 ```
 
-### As a Docker Compose Service
-
-```yaml
-services:
-  proxy:
-    image: robiki/proxy:latest
-    container_name: robiki-proxy
-    restart: unless-stopped
-    ports:
-      - '443:443'
-      - '8080:8080'
-      - '9229:9229'
-    volumes:
-      - ./proxy.config.json:/app/proxy.config.json:ro
-      - ./certs:/app/certs:ro
-    networks:
-      - app-network
-```
-
-## Notes
-
-- Hosts that are configured locally should be added to your local `hosts` file.
-- If you are using a custom certificates, you need to add the certificate files to the `certs` directory.
-
 ## 🚀 Quick Start
 
-### Using as npm Package
+### npm Package
 
 ```javascript
 import { createProxy } from '@robiki/proxy';
@@ -88,13 +63,11 @@ const proxy = await createProxy({
     },
   },
 });
-
-console.log('Proxy server is running!');
 ```
 
-### Using with Docker
+### Docker
 
-1. Create a `proxy.config.json` file:
+Create `proxy.config.json`:
 
 ```json
 {
@@ -108,20 +81,14 @@ console.log('Proxy server is running!');
     "api.example.com": {
       "target": "backend-service:3000",
       "ssl": true
-    },
-    "example.com": {
-      "target": "frontend-service:8080",
-      "ssl": false
     }
   }
 }
 ```
 
-2. Create a `docker-compose.yml`:
+Create `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
-
 services:
   proxy:
     image: robiki/proxy:latest
@@ -133,25 +100,9 @@ services:
       - ./certs:/app/certs:ro
     environment:
       - PROXY_CONFIG=/app/proxy.config.json
-    networks:
-      - app-network
-
-  backend-service:
-    image: your-backend-image
-    networks:
-      - app-network
-
-  frontend-service:
-    image: your-frontend-image
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 ```
 
-3. Start the services:
+Start:
 
 ```bash
 docker-compose up -d
@@ -159,9 +110,9 @@ docker-compose up -d
 
 ## 📖 Configuration
 
-### Configuration File
+### JSON Configuration
 
-Create a `proxy.config.json` file with the following structure:
+Simple declarative configuration:
 
 ```json
 {
@@ -169,24 +120,17 @@ Create a `proxy.config.json` file with the following structure:
   "ssl": {
     "key": "./certs/key.pem",
     "cert": "./certs/cert.pem",
-    "ca": "./certs/ca.pem",
     "allowHTTP1": true
   },
   "cors": {
     "origin": "*",
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allowedHeaders": ["Content-Type", "Authorization"],
-    "credentials": true,
-    "maxAge": 86400
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "credentials": true
   },
   "routes": {
     "api.example.com": {
-      "target": "backend-service:3000",
-      "ssl": true,
-      "cors": {
-        "origin": ["https://example.com"],
-        "credentials": true
-      }
+      "target": "backend:3000",
+      "ssl": true
     },
     "*.example.com": {
       "target": "wildcard-service:4000",
@@ -196,78 +140,32 @@ Create a `proxy.config.json` file with the following structure:
 }
 ```
 
-### Environment Variables
+### JavaScript Configuration
 
-You can also configure the proxy using environment variables:
-
-```bash
-# SSL Configuration
-SSL_KEY=/app/certs/key.pem
-SSL_CERT=/app/certs/cert.pem
-SSL_CA=/app/certs/ca.pem
-SSL_ALLOW_HTTP1=true
-
-# CORS Configuration
-CORS_ORIGIN=*
-CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
-CORS_HEADERS=Content-Type,Authorization
-CORS_CREDENTIALS=true
-
-# Debug Mode
-DEBUG=true  # Enable detailed logging for proxy connections and errors
-```
-
-## 🎯 Advanced Usage
-
-### URL Remapping
-
-Transform URLs before forwarding to target services:
+For advanced features like URL remapping and validation:
 
 ```javascript
-const config = {
-  routes: {
-    'api.example.com': {
-      target: 'backend:3000',
-      ssl: true,
-      remap: (url) => {
-        // Remove /api prefix
-        return url.replace(/^\/api/, '');
-      },
-    },
-  },
-};
-```
-
-### Request Validation
-
-Add custom validation logic for authentication, rate limiting, etc.:
-
-```javascript
-const config = {
-  // Global validation
-  validate: async (info) => {
-    if (!info.headers.authorization) {
-      return {
-        status: false,
-        code: 401,
-        message: 'Unauthorized',
-        headers: { 'www-authenticate': 'Bearer' },
-      };
-    }
-    return { status: true };
+// proxy.config.cjs
+module.exports = {
+  ports: [443, 8080],
+  ssl: {
+    key: './certs/key.pem',
+    cert: './certs/cert.pem',
+    allowHTTP1: true,
   },
   routes: {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Route-specific validation
+      // URL remapping
+      remap: (url) => url.replace(/^\/api/, ''),
+      // Request validation
       validate: async (info) => {
-        const rateLimit = await checkRateLimit(info.remoteAddress);
-        if (!rateLimit.allowed) {
+        if (!info.headers.authorization) {
           return {
             status: false,
-            code: 429,
-            message: 'Too Many Requests',
+            code: 401,
+            message: 'Unauthorized',
           };
         }
         return { status: true };
@@ -277,93 +175,80 @@ const config = {
 };
 ```
 
-### Custom CORS Configuration
+### TypeScript Configuration
 
-Configure CORS globally or per-route:
+Type-safe configuration with full IDE support:
 
-```javascript
-const config = {
-  // Global CORS
-  cors: {
-    origin: ['https://example.com', 'https://www.example.com'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400,
+```typescript
+// proxy.config.ts
+import type { ServerConfig, ConnectionInfo } from '@robiki/proxy';
+
+const config: ServerConfig = {
+  ports: [443, 8080],
+  ssl: {
+    key: './certs/key.pem',
+    cert: './certs/cert.pem',
+    allowHTTP1: true,
   },
   routes: {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Route-specific CORS (overrides global)
-      cors: {
-        origin: '*',
-        credentials: false,
+      remap: (url: string) => url.replace(/^\/api/, ''),
+      validate: async (info: ConnectionInfo) => {
+        if (!info.headers['x-api-key']) {
+          return { status: false, code: 401, message: 'API Key Required' };
+        }
+        return { status: true };
       },
     },
   },
 };
+
+export default config;
 ```
 
-### Custom Handlers
+### Environment Variables
 
-Create custom request handlers for advanced use cases:
+```bash
+# SSL Configuration
+SSL_KEY=/app/certs/key.pem
+SSL_CERT=/app/certs/cert.pem
+SSL_ALLOW_HTTP1=true
 
-```javascript
-import { createCustomProxy } from '@robiki/proxy';
+# CORS Configuration
+CORS_ORIGIN=*
+CORS_METHODS=GET,POST,PUT,DELETE
+CORS_CREDENTIALS=true
 
-const customRestHandler = async (req, res) => {
-  if (req.url === '/health') {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ status: 'ok' }));
-  }
-  // Fall back to default proxy behavior
-  const { restAPIProxyHandler } = await import('@robiki/proxy/connections');
-  return restAPIProxyHandler(req, res);
-};
-
-const proxy = await createCustomProxy(config, {
-  rest: customRestHandler,
-  websocket: customWebSocketHandler,
-  stream: customStreamHandler,
-});
+# Debug Mode
+DEBUG=true
 ```
 
 ## 🔧 API Reference
 
-### `createProxy(config: ServerConfig): Promise<ProxyServer>`
+### `createProxy(config: ServerConfig)`
 
-Creates and starts a proxy server with the given configuration.
+Creates and starts a proxy server.
 
-**Parameters:**
-
-- `config`: Server configuration object
-
-**Returns:** Promise that resolves to a `ProxyServer` instance
-
-### `ProxyServer`
-
-**Methods:**
-
-- `start()`: Start the proxy server
-- `stop()`: Stop the proxy server
-- `getConfig()`: Get the current configuration
-
-### Configuration Types
-
-#### `ServerConfig`
+**ServerConfig:**
 
 ```typescript
 interface ServerConfig {
   ports?: number[];
-  ssl?: CertificateConfig;
+  ssl?: {
+    key: string;
+    cert: string;
+    ca?: string;
+    allowHTTP1?: boolean;
+  };
   routes: Record<string, RouteConfig>;
   cors?: CorsConfig;
   validate?: (info: ConnectionInfo) => Promise<ForwardValidationResult>;
 }
 ```
 
-#### `RouteConfig`
+**RouteConfig:**
 
 ```typescript
 interface RouteConfig {
@@ -375,126 +260,79 @@ interface RouteConfig {
 }
 ```
 
-#### `CorsConfig`
-
-```typescript
-interface CorsConfig {
-  origin?: string | string[];
-  methods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  credentials?: boolean;
-  maxAge?: number;
-}
-```
-
-#### `ConnectionInfo`
-
-```typescript
-interface ConnectionInfo {
-  id: number;
-  method: string;
-  path: string;
-  remoteAddress: string;
-  scheme: string;
-  authority: string;
-  origin: string;
-  headers: IncomingHttpHeaders;
-  query: URLSearchParams;
-  type: RequestType;
-}
-```
-
 ## 🐳 Docker Usage
 
-### Using in Another Project
-
-1. Add the proxy to your `docker-compose.yml`:
+Mount your config file (JSON, .cjs, or .ts):
 
 ```yaml
 services:
   proxy:
     image: robiki/proxy:latest
-    ports:
-      - '443:443'
-      - '8080:8080'
     volumes:
-      - ./proxy.config.json:/app/proxy.config.json:ro
+      - ./proxy.config.cjs:/app/proxy.config.cjs:ro
       - ./certs:/app/certs:ro
-    networks:
-      - your-network
-
-  your-service:
-    image: your-service-image
-    networks:
-      - your-network
+    environment:
+      - PROXY_CONFIG=/app/proxy.config.cjs
 ```
 
-2. Configure routes in `proxy.config.json` to point to your services
+## 🔐 SSL Certificates
 
-3. Start your stack:
-
-```bash
-docker-compose up -d
-```
-
-### Building Custom Image
-
-Create a custom Dockerfile:
-
-```dockerfile
-FROM robiki/proxy:latest
-
-# Copy your configuration
-COPY proxy.config.json /app/proxy.config.json
-COPY certs /app/certs
-
-# Set environment variables
-ENV PROXY_CONFIG=/app/proxy.config.json
-```
-
-## 📚 Examples
-
-Check the `examples/` directory for more usage examples:
-
-- `basic-usage.js` - Simple proxy setup
-- `advanced-usage.js` - Advanced features (validation, CORS, remapping)
-- `custom-handlers.js` - Custom request handlers
-- `docker-compose.example.yml` - Complete Docker setup
-
-## 🔐 SSL/TLS Certificates
-
-### Generating Self-Signed Certificates
-
-For development:
+### Development (Self-Signed)
 
 ```bash
 mkdir -p certs
 openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes
 ```
 
-### Using Let's Encrypt
-
-For production, use Let's Encrypt certificates:
+### Production (Let's Encrypt)
 
 ```bash
 certbot certonly --standalone -d example.com
 ```
 
-Then reference them in your config:
+## 🛠️ Troubleshooting
 
-```json
-{
-  "ssl": {
-    "key": "/etc/letsencrypt/live/example.com/privkey.pem",
-    "cert": "/etc/letsencrypt/live/example.com/fullchain.pem"
-  }
-}
+### Debug Mode
+
+Enable detailed logging:
+
+```bash
+DEBUG=true node your-script.js
+# or
+docker run -e DEBUG=true robiki/proxy:latest
 ```
+
+### Port Already in Use
+
+```bash
+lsof -ti:443 | xargs kill -9
+```
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+yarn test
+
+# Run with coverage
+yarn test:coverage
+
+# Docker tests
+yarn test:docker
+```
+
+## 📚 Examples
+
+Check the `examples/` directory:
+
+- `basic-usage.js` - Simple proxy setup
+- `advanced-usage.js` - Validation, CORS, remapping
+- `custom-handlers.js` - Custom request handlers
+- `docker-compose.example.yml` - Docker setup
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## 📄 License
 
@@ -505,135 +343,3 @@ MIT © Robiki sp. z o.o.
 - [GitHub Repository](https://github.com/robiki-ai/robiki-proxy)
 - [npm Package](https://www.npmjs.com/package/@robiki/proxy)
 - [Issue Tracker](https://github.com/robiki-ai/robiki-proxy/issues)
-
-## 💡 Use Cases
-
-- **Microservices Architecture**: Route requests to different services based on domain/path
-- **Development Environment**: Local proxy for testing multiple services
-- **API Gateway**: Centralized entry point with authentication and rate limiting
-- **SSL Termination**: Handle SSL/TLS at the proxy level
-- **CORS Management**: Centralized CORS configuration
-- **Load Balancing**: Distribute traffic across multiple instances (with custom handlers)
-
-## 🛠️ Troubleshooting
-
-### Debug Mode
-
-Enable detailed logging to troubleshoot connection issues:
-
-```bash
-# Enable debug mode
-DEBUG=true node your-proxy-script.js
-
-# Or with Docker
-docker run -e DEBUG=true robiki/proxy:latest
-
-# Or in docker-compose.yml
-services:
-  proxy:
-    image: robiki/proxy:latest
-    environment:
-      - DEBUG=true
-```
-
-When `DEBUG=true`, the proxy will log:
-
-- All proxy connection attempts (REST, WebSocket, HTTP/2 streams)
-- Request and response details
-- Connection errors and timeouts
-- Proxy errors and client errors
-
-### Port Already in Use
-
-The proxy will automatically attempt to kill processes on the configured ports. If this fails, manually free the ports:
-
-```bash
-lsof -ti:443 | xargs kill -9
-lsof -ti:8080 | xargs kill -9
-```
-
-### SSL Certificate Errors
-
-Ensure your certificate files are readable and in the correct format (PEM). For development, use self-signed certificates.
-
-### WebSocket Connection Issues
-
-Make sure your WebSocket routes are configured with the correct protocol (ws/wss) and that the target service supports WebSocket connections.
-
-## 🧪 Testing
-
-Robiki Proxy includes a comprehensive test suite covering unit tests, integration tests, and advanced scenarios.
-
-### Running Tests
-
-```bash
-# Run all tests
-yarn test
-
-# Run tests in watch mode
-yarn test:watch
-
-# Run tests with coverage
-yarn test:coverage
-
-# Run tests with UI
-yarn test:ui
-```
-
-### Test Coverage
-
-The test suite includes:
-
-- **Unit Tests**: Configuration, utilities, header conversion, CORS handling
-- **Integration Tests**: HTTP proxying, route resolution, validation, config loading
-- **Advanced Tests**: WebSocket proxying, HTTP/2 streams, concurrent connections
-- **Docker Tests**: Container builds, config loading, runtime behavior
-
-### Docker Tests
-
-Run Docker integration tests:
-
-```bash
-# Full Docker integration test
-yarn test:docker
-
-# Test config loading specifically
-yarn test:docker:config
-
-# Run all tests (unit + integration + Docker)
-yarn test:all
-```
-
-Or using Make:
-
-```bash
-# Quick Docker build test
-make test-docker
-
-# Full integration test suite
-make test-docker-full
-
-# Config loading test
-make test-docker-config
-
-# Docker Compose test
-make test-docker-compose
-```
-
-See the [Docker Tests README](tests/docker/README.md) for more details.
-
-## 📊 Performance
-
-The proxy is built on Node.js native HTTP/2 implementation and is designed for high performance:
-
-- Efficient stream handling
-- Minimal overhead
-- Connection pooling
-- Automatic HTTP/1.1 fallback
-
-For production deployments, consider:
-
-- Using a process manager (PM2, systemd)
-- Enabling clustering for multi-core systems
-- Monitoring with health checks
-- Setting up proper logging

@@ -59,7 +59,7 @@ describe('HTTP/2 Advanced Tests', () => {
       },
     };
 
-    proxyConfig = loadConfig(config);
+    proxyConfig = await loadConfig(config);
   });
 
   afterAll(async () => {

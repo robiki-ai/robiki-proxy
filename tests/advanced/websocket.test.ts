@@ -70,7 +70,7 @@ describe('WebSocket Advanced Tests', () => {
       },
     };
 
-    proxyConfig = loadConfig(config);
+    proxyConfig = await loadConfig(config);
   });
 
   afterAll(async () => {

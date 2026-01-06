@@ -304,13 +304,63 @@ function getConfigFromEnv(): Partial<ServerConfig> {
 }
 
 /**
- * Load configuration from file (returns partial config)
+ * Load TypeScript config file using tsx
  */
-function getConfigFromFile(): Partial<ServerConfig> {
+function loadTypeScriptConfig(resolvedPath: string): Partial<ServerConfig> {
+  try {
+    // Use tsx to register TypeScript loader
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { register } = require('tsx/cjs/api');
+    const unregister = register();
+
+    try {
+      // Clear the require cache to allow reloading
+      delete require.cache[resolvedPath];
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const configModule = require(resolvedPath);
+      return configModule.default || configModule;
+    } finally {
+      unregister();
+    }
+  } catch (error) {
+    console.warn('Failed to load TypeScript config file:', error);
+    console.warn('Make sure tsx is installed: npm install tsx or yarn add tsx');
+    return {};
+  }
+}
+
+/**
+ * Load configuration from file asynchronously (returns partial config)
+ * Supports all config file types: .json, .cjs, .ts, .js, .mjs
+ */
+async function getConfigFromFile(): Promise<Partial<ServerConfig>> {
   const configPath = process.env.PROXY_CONFIG || './proxy.config.json';
 
   try {
-    const configFile = readFileSync(resolve(configPath), 'utf-8');
+    const resolvedPath = resolve(configPath);
+
+    /* TypeScript files */
+    if (resolvedPath.endsWith('.ts')) {
+      return loadTypeScriptConfig(resolvedPath);
+    }
+
+    /* ES Module files (.js, .mjs) */
+    if (resolvedPath.endsWith('.js') || resolvedPath.endsWith('.mjs')) {
+      const fileUrl = `file://${resolvedPath}`;
+      const configModule = await import(fileUrl);
+      return configModule.default || configModule;
+    }
+
+    /* CommonJS files (.cjs) */
+    if (resolvedPath.endsWith('.cjs')) {
+      delete require.cache[resolvedPath];
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const configModule = require(resolvedPath);
+      return configModule.default || configModule;
+    }
+
+    // JSON files (default)
+    const configFile = readFileSync(resolvedPath, 'utf-8');
     return JSON.parse(configFile) as Partial<ServerConfig>;
   } catch (error) {
     return {};
@@ -318,13 +368,15 @@ function getConfigFromFile(): Partial<ServerConfig> {
 }
 
 /**
- * Load configuration with cascading priority:
+ * Load configuration with cascading priority (async):
  * 1. Programmatic config (highest priority)
  * 2. Environment variables
  * 3. Config file
  * 4. Defaults (lowest priority)
+ *
+ * Supports all config file types: .json, .cjs, .ts, .js, .mjs
  */
-export function loadConfig(programmaticConfig?: Partial<ServerConfig>): ProxyConfig {
+export async function loadConfig(programmaticConfig?: Partial<ServerConfig>): Promise<ProxyConfig> {
   /* 1. Start with defaults */
   const defaults: ServerConfig = {
     routes: {},
@@ -335,7 +387,7 @@ export function loadConfig(programmaticConfig?: Partial<ServerConfig>): ProxyCon
   };
 
   /* 2. Load from config file */
-  const fileConfig = getConfigFromFile();
+  const fileConfig = await getConfigFromFile();
 
   /* 3. Load from environment variables */
   const envConfig = getConfigFromEnv();
@@ -344,26 +396,4 @@ export function loadConfig(programmaticConfig?: Partial<ServerConfig>): ProxyCon
   const merged = deepMerge(defaults, fileConfig, envConfig, programmaticConfig || {});
 
   return new ProxyConfig(merged);
-}
-
-/**
- * Load configuration from a file (deprecated - use loadConfig instead)
- */
-export function loadConfigFromFile(path: string): ProxyConfig {
-  try {
-    const configFile = readFileSync(resolve(path), 'utf-8');
-    const config = JSON.parse(configFile) as ServerConfig;
-    return new ProxyConfig(config);
-  } catch (error) {
-    console.error('Failed to load configuration file:', error);
-    throw error;
-  }
-}
-
-/**
- * Load configuration from environment variables (deprecated - use loadConfig instead)
- */
-export function loadConfigFromEnv(): ProxyConfig {
-  const config = getConfigFromEnv();
-  return new ProxyConfig(config as ServerConfig);
 }

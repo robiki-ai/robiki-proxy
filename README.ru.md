@@ -1,11 +1,11 @@
 # 🚀 Robiki Proxy
 
-> Высокопроизводительный, гибкий обратный прокси-сервер HTTP/2 с поддержкой WebSocket, настраиваемой маршрутизацией, CORS и валидацией запросов. Используйте его как npm-пакет в вашем Node.js приложении или как автономный Docker-контейнер. Предназначен для использования только в качестве доменного прокси для локальных сред разработки.
+> Высокопроизводительный обратный прокси-сервер HTTP/2 с поддержкой WebSocket, настраиваемой маршрутизацией, CORS и валидацией запросов. Используйте как npm-пакет или Docker-контейнер для локальных сред разработки.
 
 [![npm version](https://img.shields.io/npm/v/@robiki/proxy.svg)](https://www.npmjs.com/package/@robiki/proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌍 Языки / Languages / Sprachen / 语言 / 言語 / Języki / Idiomas
+## 🌍 Языки
 
 [English](README.md) | [Deutsch](README.de.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Polski](README.pl.md) | [Español](README.es.md) | [Русский](README.ru.md)
 
@@ -23,49 +23,23 @@
 
 ## 📦 Установка
 
-### Как npm-пакет
+### npm-пакет
 
 ```bash
 npm install @robiki/proxy
-```
-
-```bash
+# или
 yarn add @robiki/proxy
 ```
 
-### Как Docker-контейнер
+### Docker
 
 ```bash
 docker pull robiki/proxy:latest
 ```
 
-### Как сервис Docker Compose
-
-```yaml
-services:
-  proxy:
-    image: robiki/proxy:latest
-    container_name: robiki-proxy
-    restart: unless-stopped
-    ports:
-      - '443:443'
-      - '8080:8080'
-      - '9229:9229'
-    volumes:
-      - ./proxy.config.json:/app/proxy.config.json:ro
-      - ./certs:/app/certs:ro
-    networks:
-      - app-network
-```
-
-## Примечания
-
-- Хосты, настроенные локально, должны быть добавлены в ваш локальный файл `hosts`.
-- Если вы используете пользовательские сертификаты, вам необходимо добавить файлы сертификатов в директорию `certs`.
-
 ## 🚀 Быстрый старт
 
-### Использование как npm-пакет
+### npm-пакет
 
 ```javascript
 import { createProxy } from '@robiki/proxy';
@@ -88,13 +62,11 @@ const proxy = await createProxy({
     },
   },
 });
-
-console.log('Прокси-сервер работает!');
 ```
 
-### Использование с Docker
+### Docker
 
-1. Создайте файл `proxy.config.json`:
+Создайте `proxy.config.json`:
 
 ```json
 {
@@ -108,20 +80,14 @@ console.log('Прокси-сервер работает!');
     "api.example.com": {
       "target": "backend-service:3000",
       "ssl": true
-    },
-    "example.com": {
-      "target": "frontend-service:8080",
-      "ssl": false
     }
   }
 }
 ```
 
-2. Создайте `docker-compose.yml`:
+Создайте `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
-
 services:
   proxy:
     image: robiki/proxy:latest
@@ -133,25 +99,9 @@ services:
       - ./certs:/app/certs:ro
     environment:
       - PROXY_CONFIG=/app/proxy.config.json
-    networks:
-      - app-network
-
-  backend-service:
-    image: your-backend-image
-    networks:
-      - app-network
-
-  frontend-service:
-    image: your-frontend-image
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 ```
 
-3. Запустите сервисы:
+Запустите:
 
 ```bash
 docker-compose up -d
@@ -159,9 +109,9 @@ docker-compose up -d
 
 ## 📖 Конфигурация
 
-### Файл конфигурации
+### JSON конфигурация
 
-Создайте файл `proxy.config.json` со следующей структурой:
+Простая декларативная конфигурация:
 
 ```json
 {
@@ -169,24 +119,17 @@ docker-compose up -d
   "ssl": {
     "key": "./certs/key.pem",
     "cert": "./certs/cert.pem",
-    "ca": "./certs/ca.pem",
     "allowHTTP1": true
   },
   "cors": {
     "origin": "*",
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allowedHeaders": ["Content-Type", "Authorization"],
-    "credentials": true,
-    "maxAge": 86400
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "credentials": true
   },
   "routes": {
     "api.example.com": {
-      "target": "backend-service:3000",
-      "ssl": true,
-      "cors": {
-        "origin": ["https://example.com"],
-        "credentials": true
-      }
+      "target": "backend:3000",
+      "ssl": true
     },
     "*.example.com": {
       "target": "wildcard-service:4000",
@@ -196,78 +139,32 @@ docker-compose up -d
 }
 ```
 
-### Переменные окружения
+### JavaScript конфигурация
 
-Вы также можете настроить прокси с помощью переменных окружения:
-
-```bash
-# Конфигурация SSL
-SSL_KEY=/app/certs/key.pem
-SSL_CERT=/app/certs/cert.pem
-SSL_CA=/app/certs/ca.pem
-SSL_ALLOW_HTTP1=true
-
-# Конфигурация CORS
-CORS_ORIGIN=*
-CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
-CORS_HEADERS=Content-Type,Authorization
-CORS_CREDENTIALS=true
-
-# Режим отладки
-DEBUG=true  # Включить подробное логирование для прокси-соединений и ошибок
-```
-
-## 🎯 Расширенное использование
-
-### Переназначение URL
-
-Преобразование URL перед пересылкой к целевым сервисам:
+Для расширенных функций, таких как переназначение URL и валидация:
 
 ```javascript
-const config = {
-  routes: {
-    'api.example.com': {
-      target: 'backend:3000',
-      ssl: true,
-      remap: (url) => {
-        // Удалить префикс /api
-        return url.replace(/^\/api/, '');
-      },
-    },
-  },
-};
-```
-
-### Валидация запросов
-
-Добавление пользовательской логики валидации для аутентификации, ограничения скорости и т.д.:
-
-```javascript
-const config = {
-  // Глобальная валидация
-  validate: async (info) => {
-    if (!info.headers.authorization) {
-      return {
-        status: false,
-        code: 401,
-        message: 'Не авторизован',
-        headers: { 'www-authenticate': 'Bearer' },
-      };
-    }
-    return { status: true };
+// proxy.config.cjs
+module.exports = {
+  ports: [443, 8080],
+  ssl: {
+    key: './certs/key.pem',
+    cert: './certs/cert.pem',
+    allowHTTP1: true,
   },
   routes: {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Валидация для конкретного маршрута
+      // Переназначение URL
+      remap: (url) => url.replace(/^\/api/, ''),
+      // Валидация запросов
       validate: async (info) => {
-        const rateLimit = await checkRateLimit(info.remoteAddress);
-        if (!rateLimit.allowed) {
+        if (!info.headers.authorization) {
           return {
             status: false,
-            code: 429,
-            message: 'Слишком много запросов',
+            code: 401,
+            message: 'Unauthorized',
           };
         }
         return { status: true };
@@ -277,93 +174,80 @@ const config = {
 };
 ```
 
-### Пользовательская конфигурация CORS
+### TypeScript конфигурация
 
-Настройка CORS глобально или для каждого маршрута:
+Типобезопасная конфигурация с полной поддержкой IDE:
 
-```javascript
-const config = {
-  // Глобальный CORS
-  cors: {
-    origin: ['https://example.com', 'https://www.example.com'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400,
+```typescript
+// proxy.config.ts
+import type { ServerConfig, ConnectionInfo } from '@robiki/proxy';
+
+const config: ServerConfig = {
+  ports: [443, 8080],
+  ssl: {
+    key: './certs/key.pem',
+    cert: './certs/cert.pem',
+    allowHTTP1: true,
   },
   routes: {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // CORS для конкретного маршрута (переопределяет глобальный)
-      cors: {
-        origin: '*',
-        credentials: false,
+      remap: (url: string) => url.replace(/^\/api/, ''),
+      validate: async (info: ConnectionInfo) => {
+        if (!info.headers['x-api-key']) {
+          return { status: false, code: 401, message: 'API Key Required' };
+        }
+        return { status: true };
       },
     },
   },
 };
+
+export default config;
 ```
 
-### Пользовательские обработчики
+### Переменные окружения
 
-Создание пользовательских обработчиков запросов для продвинутых случаев использования:
+```bash
+# Конфигурация SSL
+SSL_KEY=/app/certs/key.pem
+SSL_CERT=/app/certs/cert.pem
+SSL_ALLOW_HTTP1=true
 
-```javascript
-import { createCustomProxy } from '@robiki/proxy';
+# Конфигурация CORS
+CORS_ORIGIN=*
+CORS_METHODS=GET,POST,PUT,DELETE
+CORS_CREDENTIALS=true
 
-const customRestHandler = async (req, res) => {
-  if (req.url === '/health') {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ status: 'ok' }));
-  }
-  // Откат к стандартному поведению прокси
-  const { restAPIProxyHandler } = await import('@robiki/proxy/connections');
-  return restAPIProxyHandler(req, res);
-};
-
-const proxy = await createCustomProxy(config, {
-  rest: customRestHandler,
-  websocket: customWebSocketHandler,
-  stream: customStreamHandler,
-});
+# Режим отладки
+DEBUG=true
 ```
 
 ## 🔧 Справочник API
 
-### `createProxy(config: ServerConfig): Promise<ProxyServer>`
+### `createProxy(config: ServerConfig)`
 
-Создает и запускает прокси-сервер с заданной конфигурацией.
+Создает и запускает прокси-сервер.
 
-**Параметры:**
-
-- `config`: Объект конфигурации сервера
-
-**Возвращает:** Promise, который разрешается в экземпляр `ProxyServer`
-
-### `ProxyServer`
-
-**Методы:**
-
-- `start()`: Запустить прокси-сервер
-- `stop()`: Остановить прокси-сервер
-- `getConfig()`: Получить текущую конфигурацию
-
-### Типы конфигурации
-
-#### `ServerConfig`
+**ServerConfig:**
 
 ```typescript
 interface ServerConfig {
   ports?: number[];
-  ssl?: CertificateConfig;
+  ssl?: {
+    key: string;
+    cert: string;
+    ca?: string;
+    allowHTTP1?: boolean;
+  };
   routes: Record<string, RouteConfig>;
   cors?: CorsConfig;
   validate?: (info: ConnectionInfo) => Promise<ForwardValidationResult>;
 }
 ```
 
-#### `RouteConfig`
+**RouteConfig:**
 
 ```typescript
 interface RouteConfig {
@@ -375,126 +259,79 @@ interface RouteConfig {
 }
 ```
 
-#### `CorsConfig`
-
-```typescript
-interface CorsConfig {
-  origin?: string | string[];
-  methods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  credentials?: boolean;
-  maxAge?: number;
-}
-```
-
-#### `ConnectionInfo`
-
-```typescript
-interface ConnectionInfo {
-  id: number;
-  method: string;
-  path: string;
-  remoteAddress: string;
-  scheme: string;
-  authority: string;
-  origin: string;
-  headers: IncomingHttpHeaders;
-  query: URLSearchParams;
-  type: RequestType;
-}
-```
-
 ## 🐳 Использование Docker
 
-### Использование в другом проекте
-
-1. Добавьте прокси в ваш `docker-compose.yml`:
+Смонтируйте ваш конфигурационный файл (JSON, .cjs или .ts):
 
 ```yaml
 services:
   proxy:
     image: robiki/proxy:latest
-    ports:
-      - '443:443'
-      - '8080:8080'
     volumes:
-      - ./proxy.config.json:/app/proxy.config.json:ro
+      - ./proxy.config.cjs:/app/proxy.config.cjs:ro
       - ./certs:/app/certs:ro
-    networks:
-      - your-network
-
-  your-service:
-    image: your-service-image
-    networks:
-      - your-network
+    environment:
+      - PROXY_CONFIG=/app/proxy.config.cjs
 ```
 
-2. Настройте маршруты в `proxy.config.json`, чтобы они указывали на ваши сервисы
+## 🔐 SSL сертификаты
 
-3. Запустите ваш стек:
-
-```bash
-docker-compose up -d
-```
-
-### Создание пользовательского образа
-
-Создайте пользовательский Dockerfile:
-
-```dockerfile
-FROM robiki/proxy:latest
-
-# Скопируйте вашу конфигурацию
-COPY proxy.config.json /app/proxy.config.json
-COPY certs /app/certs
-
-# Установите переменные окружения
-ENV PROXY_CONFIG=/app/proxy.config.json
-```
-
-## 📚 Примеры
-
-Проверьте директорию `examples/` для большего количества примеров использования:
-
-- `basic-usage.js` - Простая настройка прокси
-- `advanced-usage.js` - Расширенные функции (валидация, CORS, переназначение)
-- `custom-handlers.js` - Пользовательские обработчики запросов
-- `docker-compose.example.yml` - Полная настройка Docker
-
-## 🔐 SSL/TLS сертификаты
-
-### Генерация самоподписанных сертификатов
-
-Для разработки:
+### Разработка (самоподписанные)
 
 ```bash
 mkdir -p certs
 openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes
 ```
 
-### Использование Let's Encrypt
-
-Для продакшена используйте сертификаты Let's Encrypt:
+### Продакшн (Let's Encrypt)
 
 ```bash
 certbot certonly --standalone -d example.com
 ```
 
-Затем ссылайтесь на них в вашей конфигурации:
+## 🛠️ Устранение неполадок
 
-```json
-{
-  "ssl": {
-    "key": "/etc/letsencrypt/live/example.com/privkey.pem",
-    "cert": "/etc/letsencrypt/live/example.com/fullchain.pem"
-  }
-}
+### Режим отладки
+
+Включите подробное логирование:
+
+```bash
+DEBUG=true node your-script.js
+# или
+docker run -e DEBUG=true robiki/proxy:latest
 ```
 
-## 🤝 Вклад
+### Порт уже используется
 
-Вклады приветствуются! Пожалуйста, не стесняйтесь отправлять Pull Request.
+```bash
+lsof -ti:443 | xargs kill -9
+```
+
+## 🧪 Тестирование
+
+```bash
+# Запустить все тесты
+yarn test
+
+# С покрытием
+yarn test:coverage
+
+# Docker тесты
+yarn test:docker
+```
+
+## 📚 Примеры
+
+Смотрите директорию `examples/`:
+
+- `basic-usage.js` - Простая настройка прокси
+- `advanced-usage.js` - Валидация, CORS, переназначение
+- `custom-handlers.js` - Пользовательские обработчики запросов
+- `docker-compose.example.yml` - Настройка Docker
+
+## 🤝 Вклад в проект
+
+Вклад приветствуется! Смотрите [CONTRIBUTING.md](CONTRIBUTING.md) для подробностей.
 
 ## 📄 Лицензия
 
@@ -502,138 +339,6 @@ MIT © Robiki sp. z o.o.
 
 ## 🔗 Ссылки
 
-- [GitHub репозиторий](https://github.com/robiki-ai/robiki-proxy)
+- [Репозиторий GitHub](https://github.com/robiki-ai/robiki-proxy)
 - [npm пакет](https://www.npmjs.com/package/@robiki/proxy)
-- [Трекер проблем](https://github.com/robiki-ai/robiki-proxy/issues)
-
-## 💡 Случаи использования
-
-- **Архитектура микросервисов**: Маршрутизация запросов к различным сервисам на основе домена/пути
-- **Среда разработки**: Локальный прокси для тестирования нескольких сервисов
-- **API Gateway**: Централизованная точка входа с аутентификацией и ограничением скорости
-- **SSL терминация**: Обработка SSL/TLS на уровне прокси
-- **Управление CORS**: Централизованная конфигурация CORS
-- **Балансировка нагрузки**: Распределение трафика между несколькими экземплярами (с пользовательскими обработчиками)
-
-## 🛠️ Устранение неполадок
-
-### Режим отладки
-
-Включите подробное логирование для устранения проблем с подключением:
-
-```bash
-# Включить режим отладки
-DEBUG=true node your-proxy-script.js
-
-# Или с Docker
-docker run -e DEBUG=true robiki/proxy:latest
-
-# Или в docker-compose.yml
-services:
-  proxy:
-    image: robiki/proxy:latest
-    environment:
-      - DEBUG=true
-```
-
-Когда `DEBUG=true`, прокси будет логировать:
-- Все попытки прокси-соединения (REST, WebSocket, HTTP/2 потоки)
-- Детали запросов и ответов
-- Ошибки соединения и таймауты
-- Ошибки прокси и ошибки клиента
-
-### Порт уже используется
-
-Прокси автоматически попытается завершить процессы на настроенных портах. Если это не удастся, освободите порты вручную:
-
-```bash
-lsof -ti:443 | xargs kill -9
-lsof -ti:8080 | xargs kill -9
-```
-
-### Ошибки SSL сертификата
-
-Убедитесь, что ваши файлы сертификатов читаемы и в правильном формате (PEM). Для разработки используйте самоподписанные сертификаты.
-
-### Проблемы с WebSocket соединением
-
-Убедитесь, что ваши WebSocket маршруты настроены с правильным протоколом (ws/wss) и что целевой сервис поддерживает WebSocket соединения.
-
-## 🧪 Тестирование
-
-Robiki Proxy включает комплексный набор тестов, охватывающий модульные тесты, интеграционные тесты и продвинутые сценарии.
-
-### Запуск тестов
-
-```bash
-# Запустить все тесты
-yarn test
-
-# Запустить тесты в режиме наблюдения
-yarn test:watch
-
-# Запустить тесты с покрытием
-yarn test:coverage
-
-# Запустить тесты с UI
-yarn test:ui
-```
-
-### Покрытие тестами
-
-Набор тестов включает:
-
-- **Модульные тесты**: Конфигурация, утилиты, преобразование заголовков, обработка CORS
-- **Интеграционные тесты**: HTTP проксирование, разрешение маршрутов, валидация, загрузка конфигурации
-- **Продвинутые тесты**: WebSocket проксирование, HTTP/2 потоки, одновременные соединения
-- **Docker тесты**: Сборка контейнеров, загрузка конфигурации, поведение во время выполнения
-
-### Docker тесты
-
-Запуск интеграционных тестов Docker:
-
-```bash
-# Полный интеграционный тест Docker
-yarn test:docker
-
-# Тест загрузки конфигурации
-yarn test:docker:config
-
-# Запустить все тесты (модульные + интеграционные + Docker)
-yarn test:all
-```
-
-Или используя Make:
-
-```bash
-# Быстрый тест сборки Docker
-make test-docker
-
-# Полный набор интеграционных тестов
-make test-docker-full
-
-# Тест загрузки конфигурации
-make test-docker-config
-
-# Тест Docker Compose
-make test-docker-compose
-```
-
-Смотрите [Docker Tests README](tests/docker/README.md) для более подробной информации.
-
-## 📊 Производительность
-
-Прокси построен на нативной реализации HTTP/2 в Node.js и разработан для высокой производительности:
-
-- Эффективная обработка потоков
-- Минимальные накладные расходы
-- Пулинг соединений
-- Автоматический откат к HTTP/1.1
-
-Для продакшен развертываний рассмотрите:
-
-- Использование менеджера процессов (PM2, systemd)
-- Включение кластеризации для многоядерных систем
-- Мониторинг с помощью health checks
-- Настройка правильного логирования
-
+- [Issue Tracker](https://github.com/robiki-ai/robiki-proxy/issues)
