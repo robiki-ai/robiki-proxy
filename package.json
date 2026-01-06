@@ -1,6 +1,6 @@
 {
   "name": "@robiki/proxy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A flexible HTTP/2 proxy server with WebSocket support, configurable routing, CORS, and validation. Use as npm package or Docker container.",
   "keywords": [
     "proxy",
@@ -31,10 +31,6 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    },
-    "./proxy": {
-      "import": "./dist/proxy.js",
-      "types": "./dist/proxy.d.ts"
     },
     "./config": {
       "import": "./dist/utils/config.js",
