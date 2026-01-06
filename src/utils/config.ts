@@ -249,26 +249,6 @@ export class ProxyConfig {
   }
 }
 
-let globalConfig: ProxyConfig | undefined;
-
-/**
- * Initialize the global configuration
- */
-export function initConfig(config: ServerConfig): ProxyConfig {
-  globalConfig = new ProxyConfig(config);
-  return globalConfig;
-}
-
-/**
- * Get the global configuration
- */
-export function getConfig(): ProxyConfig {
-  if (!globalConfig) {
-    throw new Error('Configuration not initialized. Call initConfig() first.');
-  }
-  return globalConfig;
-}
-
 /**
  * Deep merge objects with priority to later arguments
  */
@@ -361,7 +341,7 @@ export function loadConfig(programmaticConfig?: Partial<ServerConfig>): ProxyCon
   /* 4. Merge with priority: programmatic > env > file > defaults */
   const merged = deepMerge(defaults, fileConfig, envConfig, programmaticConfig || {});
 
-  return initConfig(merged);
+  return new ProxyConfig(merged);
 }
 
 /**
@@ -371,7 +351,7 @@ export function loadConfigFromFile(path: string): ProxyConfig {
   try {
     const configFile = readFileSync(resolve(path), 'utf-8');
     const config = JSON.parse(configFile) as ServerConfig;
-    return initConfig(config);
+    return new ProxyConfig(config);
   } catch (error) {
     console.error('Failed to load configuration file:', error);
     throw error;
@@ -383,5 +363,5 @@ export function loadConfigFromFile(path: string): ProxyConfig {
  */
 export function loadConfigFromEnv(): ProxyConfig {
   const config = getConfigFromEnv();
-  return initConfig(config as ServerConfig);
+  return new ProxyConfig(config as ServerConfig);
 }

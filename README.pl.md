@@ -1,29 +1,29 @@
 # 🚀 Robiki Proxy
 
-> A high-performance, flexible HTTP/2 reverse proxy with WebSocket support, configurable routing, CORS, and request validation. Use it as an npm package in your Node.js application or as a standalone Docker container. Meant to be used as a domain proxy for local development environments only.
+> Wydajny, elastyczny reverse proxy HTTP/2 z obsługą WebSocket, konfigurowalnym routingiem, CORS i walidacją żądań. Używaj go jako pakiet npm w aplikacji Node.js lub jako samodzielny kontener Docker. Przeznaczony wyłącznie do użytku jako proxy domenowe w lokalnych środowiskach deweloperskich.
 
 [![npm version](https://img.shields.io/npm/v/@robiki/proxy.svg)](https://www.npmjs.com/package/@robiki/proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌍 Languages / Sprachen / 语言 / 言語 / Języki / Idiomas / Языки
+## 🌍 Języki / Languages / Sprachen / 语言 / 言語 / Idiomas / Языки
 
 [English](README.md) | [Deutsch](README.de.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Polski](README.pl.md) | [Español](README.es.md) | [Русский](README.ru.md)
 
-## ✨ Features
+## ✨ Funkcje
 
-- **🔒 HTTP/2 & SSL/TLS Support**: Full HTTP/2 protocol support with automatic HTTP/1.1 fallback
-- **🔌 WebSocket Proxying**: Seamless WebSocket connection handling and proxying
-- **🌐 Flexible Routing**: Configure routes by domain/host with wildcard support
-- **🛡️ CORS Management**: Global and per-route CORS configuration
-- **✅ Request Validation**: Custom validation logic for authentication, rate limiting, etc.
-- **🔄 URL Remapping**: Transform URLs before forwarding to target services
-- **📦 Dual Usage**: Use as npm package or Docker container
-- **🎯 Multi-Port Support**: Listen on multiple ports simultaneously
-- **⚡ High Performance**: Built on Node.js native HTTP/2 implementation
+- **🔒 Obsługa HTTP/2 i SSL/TLS**: Pełna obsługa protokołu HTTP/2 z automatycznym powrotem do HTTP/1.1
+- **🔌 Proxy WebSocket**: Bezproblemowa obsługa i proxy połączeń WebSocket
+- **🌐 Elastyczny routing**: Konfiguracja tras według domeny/hosta z obsługą wildcardów
+- **🛡️ Zarządzanie CORS**: Globalna i per-trasa konfiguracja CORS
+- **✅ Walidacja żądań**: Niestandardowa logika walidacji dla uwierzytelniania, limitowania żądań itp.
+- **🔄 Przekierowywanie URL**: Transformacja URL przed przekazaniem do usług docelowych
+- **📦 Podwójne użycie**: Użyj jako pakiet npm lub kontener Docker
+- **🎯 Obsługa wielu portów**: Nasłuchiwanie na wielu portach jednocześnie
+- **⚡ Wysoka wydajność**: Zbudowany na natywnej implementacji HTTP/2 w Node.js
 
-## 📦 Installation
+## 📦 Instalacja
 
-### As an npm Package
+### Jako pakiet npm
 
 ```bash
 npm install @robiki/proxy
@@ -33,13 +33,13 @@ npm install @robiki/proxy
 yarn add @robiki/proxy
 ```
 
-### As a Docker Container
+### Jako kontener Docker
 
 ```bash
 docker pull robiki/proxy:latest
 ```
 
-### As a Docker Compose Service
+### Jako usługa Docker Compose
 
 ```yaml
 services:
@@ -58,14 +58,14 @@ services:
       - app-network
 ```
 
-## Notes
+## Uwagi
 
-- Hosts that are configured locally should be added to your local `hosts` file.
-- If you are using a custom certificates, you need to add the certificate files to the `certs` directory.
+- Hosty skonfigurowane lokalnie powinny zostać dodane do lokalnego pliku `hosts`.
+- Jeśli używasz niestandardowych certyfikatów, musisz dodać pliki certyfikatów do katalogu `certs`.
 
-## 🚀 Quick Start
+## 🚀 Szybki start
 
-### Using as npm Package
+### Użycie jako pakiet npm
 
 ```javascript
 import { createProxy } from '@robiki/proxy';
@@ -89,12 +89,12 @@ const proxy = await createProxy({
   },
 });
 
-console.log('Proxy server is running!');
+console.log('Serwer proxy działa!');
 ```
 
-### Using with Docker
+### Użycie z Docker
 
-1. Create a `proxy.config.json` file:
+1. Utwórz plik `proxy.config.json`:
 
 ```json
 {
@@ -117,7 +117,7 @@ console.log('Proxy server is running!');
 }
 ```
 
-2. Create a `docker-compose.yml`:
+2. Utwórz `docker-compose.yml`:
 
 ```yaml
 version: '3.8'
@@ -151,17 +151,17 @@ networks:
     driver: bridge
 ```
 
-3. Start the services:
+3. Uruchom usługi:
 
 ```bash
 docker-compose up -d
 ```
 
-## 📖 Configuration
+## 📖 Konfiguracja
 
-### Configuration File
+### Plik konfiguracyjny
 
-Create a `proxy.config.json` file with the following structure:
+Utwórz plik `proxy.config.json` o następującej strukturze:
 
 ```json
 {
@@ -196,32 +196,32 @@ Create a `proxy.config.json` file with the following structure:
 }
 ```
 
-### Environment Variables
+### Zmienne środowiskowe
 
-You can also configure the proxy using environment variables:
+Możesz również skonfigurować proxy za pomocą zmiennych środowiskowych:
 
 ```bash
-# SSL Configuration
+# Konfiguracja SSL
 SSL_KEY=/app/certs/key.pem
 SSL_CERT=/app/certs/cert.pem
 SSL_CA=/app/certs/ca.pem
 SSL_ALLOW_HTTP1=true
 
-# CORS Configuration
+# Konfiguracja CORS
 CORS_ORIGIN=*
 CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
 CORS_HEADERS=Content-Type,Authorization
 CORS_CREDENTIALS=true
 
-# Debug Mode
-DEBUG=true  # Enable detailed logging for proxy connections and errors
+# Tryb debugowania
+DEBUG=true  # Włącz szczegółowe logowanie dla połączeń proxy i błędów
 ```
 
-## 🎯 Advanced Usage
+## 🎯 Zaawansowane użycie
 
-### URL Remapping
+### Przekierowywanie URL
 
-Transform URLs before forwarding to target services:
+Transformuj URL przed przekazaniem do usług docelowych:
 
 ```javascript
 const config = {
@@ -230,7 +230,7 @@ const config = {
       target: 'backend:3000',
       ssl: true,
       remap: (url) => {
-        // Remove /api prefix
+        // Usuń prefiks /api
         return url.replace(/^\/api/, '');
       },
     },
@@ -238,19 +238,19 @@ const config = {
 };
 ```
 
-### Request Validation
+### Walidacja żądań
 
-Add custom validation logic for authentication, rate limiting, etc.:
+Dodaj niestandardową logikę walidacji dla uwierzytelniania, limitowania żądań itp.:
 
 ```javascript
 const config = {
-  // Global validation
+  // Walidacja globalna
   validate: async (info) => {
     if (!info.headers.authorization) {
       return {
         status: false,
         code: 401,
-        message: 'Unauthorized',
+        message: 'Nieautoryzowany',
         headers: { 'www-authenticate': 'Bearer' },
       };
     }
@@ -260,14 +260,14 @@ const config = {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Route-specific validation
+      // Walidacja specyficzna dla trasy
       validate: async (info) => {
         const rateLimit = await checkRateLimit(info.remoteAddress);
         if (!rateLimit.allowed) {
           return {
             status: false,
             code: 429,
-            message: 'Too Many Requests',
+            message: 'Zbyt wiele żądań',
           };
         }
         return { status: true };
@@ -277,13 +277,13 @@ const config = {
 };
 ```
 
-### Custom CORS Configuration
+### Niestandardowa konfiguracja CORS
 
-Configure CORS globally or per-route:
+Skonfiguruj CORS globalnie lub per-trasa:
 
 ```javascript
 const config = {
-  // Global CORS
+  // Globalny CORS
   cors: {
     origin: ['https://example.com', 'https://www.example.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -295,7 +295,7 @@ const config = {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Route-specific CORS (overrides global)
+      // CORS specyficzny dla trasy (nadpisuje globalny)
       cors: {
         origin: '*',
         credentials: false,
@@ -305,9 +305,9 @@ const config = {
 };
 ```
 
-### Custom Handlers
+### Niestandardowe handlery
 
-Create custom request handlers for advanced use cases:
+Utwórz niestandardowe handlery żądań dla zaawansowanych przypadków użycia:
 
 ```javascript
 import { createCustomProxy } from '@robiki/proxy';
@@ -317,7 +317,7 @@ const customRestHandler = async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ status: 'ok' }));
   }
-  // Fall back to default proxy behavior
+  // Powrót do domyślnego zachowania proxy
   const { restAPIProxyHandler } = await import('@robiki/proxy/connections');
   return restAPIProxyHandler(req, res);
 };
@@ -329,27 +329,27 @@ const proxy = await createCustomProxy(config, {
 });
 ```
 
-## 🔧 API Reference
+## 🔧 Dokumentacja API
 
 ### `createProxy(config: ServerConfig): Promise<ProxyServer>`
 
-Creates and starts a proxy server with the given configuration.
+Tworzy i uruchamia serwer proxy z podaną konfiguracją.
 
-**Parameters:**
+**Parametry:**
 
-- `config`: Server configuration object
+- `config`: Obiekt konfiguracji serwera
 
-**Returns:** Promise that resolves to a `ProxyServer` instance
+**Zwraca:** Promise, który rozwiązuje się do instancji `ProxyServer`
 
 ### `ProxyServer`
 
-**Methods:**
+**Metody:**
 
-- `start()`: Start the proxy server
-- `stop()`: Stop the proxy server
-- `getConfig()`: Get the current configuration
+- `start()`: Uruchom serwer proxy
+- `stop()`: Zatrzymaj serwer proxy
+- `getConfig()`: Pobierz aktualną konfigurację
 
-### Configuration Types
+### Typy konfiguracji
 
 #### `ServerConfig`
 
@@ -405,11 +405,11 @@ interface ConnectionInfo {
 }
 ```
 
-## 🐳 Docker Usage
+## 🐳 Użycie Docker
 
-### Using in Another Project
+### Użycie w innym projekcie
 
-1. Add the proxy to your `docker-compose.yml`:
+1. Dodaj proxy do swojego `docker-compose.yml`:
 
 ```yaml
 services:
@@ -430,58 +430,58 @@ services:
       - your-network
 ```
 
-2. Configure routes in `proxy.config.json` to point to your services
+2. Skonfiguruj trasy w `proxy.config.json`, aby wskazywały na twoje usługi
 
-3. Start your stack:
+3. Uruchom swój stack:
 
 ```bash
 docker-compose up -d
 ```
 
-### Building Custom Image
+### Budowanie niestandardowego obrazu
 
-Create a custom Dockerfile:
+Utwórz niestandardowy Dockerfile:
 
 ```dockerfile
 FROM robiki/proxy:latest
 
-# Copy your configuration
+# Skopiuj swoją konfigurację
 COPY proxy.config.json /app/proxy.config.json
 COPY certs /app/certs
 
-# Set environment variables
+# Ustaw zmienne środowiskowe
 ENV PROXY_CONFIG=/app/proxy.config.json
 ```
 
-## 📚 Examples
+## 📚 Przykłady
 
-Check the `examples/` directory for more usage examples:
+Sprawdź katalog `examples/` dla więcej przykładów użycia:
 
-- `basic-usage.js` - Simple proxy setup
-- `advanced-usage.js` - Advanced features (validation, CORS, remapping)
-- `custom-handlers.js` - Custom request handlers
-- `docker-compose.example.yml` - Complete Docker setup
+- `basic-usage.js` - Prosta konfiguracja proxy
+- `advanced-usage.js` - Zaawansowane funkcje (walidacja, CORS, przekierowywanie)
+- `custom-handlers.js` - Niestandardowe handlery żądań
+- `docker-compose.example.yml` - Pełna konfiguracja Docker
 
-## 🔐 SSL/TLS Certificates
+## 🔐 Certyfikaty SSL/TLS
 
-### Generating Self-Signed Certificates
+### Generowanie certyfikatów self-signed
 
-For development:
+Do rozwoju:
 
 ```bash
 mkdir -p certs
 openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes
 ```
 
-### Using Let's Encrypt
+### Użycie Let's Encrypt
 
-For production, use Let's Encrypt certificates:
+Do produkcji, użyj certyfikatów Let's Encrypt:
 
 ```bash
 certbot certonly --standalone -d example.com
 ```
 
-Then reference them in your config:
+Następnie odwołaj się do nich w konfiguracji:
 
 ```json
 {
@@ -492,43 +492,43 @@ Then reference them in your config:
 }
 ```
 
-## 🤝 Contributing
+## 🤝 Współpraca
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Wkłady są mile widziane! Prosimy o przesyłanie Pull Requestów.
 
-## 📄 License
+## 📄 Licencja
 
 MIT © Robiki sp. z o.o.
 
-## 🔗 Links
+## 🔗 Linki
 
-- [GitHub Repository](https://github.com/robiki-ai/robiki-proxy)
-- [npm Package](https://www.npmjs.com/package/@robiki/proxy)
-- [Issue Tracker](https://github.com/robiki-ai/robiki-proxy/issues)
+- [Repozytorium GitHub](https://github.com/robiki-ai/robiki-proxy)
+- [Pakiet npm](https://www.npmjs.com/package/@robiki/proxy)
+- [Tracker problemów](https://github.com/robiki-ai/robiki-proxy/issues)
 
-## 💡 Use Cases
+## 💡 Przypadki użycia
 
-- **Microservices Architecture**: Route requests to different services based on domain/path
-- **Development Environment**: Local proxy for testing multiple services
-- **API Gateway**: Centralized entry point with authentication and rate limiting
-- **SSL Termination**: Handle SSL/TLS at the proxy level
-- **CORS Management**: Centralized CORS configuration
-- **Load Balancing**: Distribute traffic across multiple instances (with custom handlers)
+- **Architektura mikroserwisów**: Kierowanie żądań do różnych usług na podstawie domeny/ścieżki
+- **Środowisko deweloperskie**: Lokalny proxy do testowania wielu usług
+- **Brama API**: Scentralizowany punkt wejścia z uwierzytelnianiem i limitowaniem żądań
+- **Terminacja SSL**: Obsługa SSL/TLS na poziomie proxy
+- **Zarządzanie CORS**: Scentralizowana konfiguracja CORS
+- **Równoważenie obciążenia**: Dystrybucja ruchu między wieloma instancjami (z niestandardowymi handlerami)
 
-## 🛠️ Troubleshooting
+## 🛠️ Rozwiązywanie problemów
 
-### Debug Mode
+### Tryb debugowania
 
-Enable detailed logging to troubleshoot connection issues:
+Włącz szczegółowe logowanie, aby rozwiązać problemy z połączeniem:
 
 ```bash
-# Enable debug mode
+# Włącz tryb debugowania
 DEBUG=true node your-proxy-script.js
 
-# Or with Docker
+# Lub z Docker
 docker run -e DEBUG=true robiki/proxy:latest
 
-# Or in docker-compose.yml
+# Lub w docker-compose.yml
 services:
   proxy:
     image: robiki/proxy:latest
@@ -536,104 +536,104 @@ services:
       - DEBUG=true
 ```
 
-When `DEBUG=true`, the proxy will log:
+Gdy `DEBUG=true`, proxy będzie logować:
+- Wszystkie próby połączenia proxy (REST, WebSocket, strumienie HTTP/2)
+- Szczegóły żądań i odpowiedzi
+- Błędy połączenia i przekroczenia czasu
+- Błędy proxy i błędy klienta
 
-- All proxy connection attempts (REST, WebSocket, HTTP/2 streams)
-- Request and response details
-- Connection errors and timeouts
-- Proxy errors and client errors
+### Port już w użyciu
 
-### Port Already in Use
-
-The proxy will automatically attempt to kill processes on the configured ports. If this fails, manually free the ports:
+Proxy automatycznie spróbuje zabić procesy na skonfigurowanych portach. Jeśli to się nie powiedzie, ręcznie zwolnij porty:
 
 ```bash
 lsof -ti:443 | xargs kill -9
 lsof -ti:8080 | xargs kill -9
 ```
 
-### SSL Certificate Errors
+### Błędy certyfikatu SSL
 
-Ensure your certificate files are readable and in the correct format (PEM). For development, use self-signed certificates.
+Upewnij się, że pliki certyfikatów są czytelne i w poprawnym formacie (PEM). Do rozwoju użyj certyfikatów self-signed.
 
-### WebSocket Connection Issues
+### Problemy z połączeniem WebSocket
 
-Make sure your WebSocket routes are configured with the correct protocol (ws/wss) and that the target service supports WebSocket connections.
+Upewnij się, że trasy WebSocket są skonfigurowane z poprawnym protokołem (ws/wss) i że usługa docelowa obsługuje połączenia WebSocket.
 
-## 🧪 Testing
+## 🧪 Testowanie
 
-Robiki Proxy includes a comprehensive test suite covering unit tests, integration tests, and advanced scenarios.
+Robiki Proxy zawiera kompleksowy zestaw testów obejmujący testy jednostkowe, testy integracyjne i zaawansowane scenariusze.
 
-### Running Tests
+### Uruchamianie testów
 
 ```bash
-# Run all tests
+# Uruchom wszystkie testy
 yarn test
 
-# Run tests in watch mode
+# Uruchom testy w trybie watch
 yarn test:watch
 
-# Run tests with coverage
+# Uruchom testy z pokryciem
 yarn test:coverage
 
-# Run tests with UI
+# Uruchom testy z UI
 yarn test:ui
 ```
 
-### Test Coverage
+### Pokrycie testów
 
-The test suite includes:
+Zestaw testów obejmuje:
 
-- **Unit Tests**: Configuration, utilities, header conversion, CORS handling
-- **Integration Tests**: HTTP proxying, route resolution, validation, config loading
-- **Advanced Tests**: WebSocket proxying, HTTP/2 streams, concurrent connections
-- **Docker Tests**: Container builds, config loading, runtime behavior
+- **Testy jednostkowe**: Konfiguracja, narzędzia, konwersja nagłówków, obsługa CORS
+- **Testy integracyjne**: Proxy HTTP, rozwiązywanie tras, walidacja, ładowanie konfiguracji
+- **Testy zaawansowane**: Proxy WebSocket, strumienie HTTP/2, równoczesne połączenia
+- **Testy Docker**: Budowanie kontenerów, ładowanie konfiguracji, zachowanie w czasie wykonywania
 
-### Docker Tests
+### Testy Docker
 
-Run Docker integration tests:
+Uruchom testy integracyjne Docker:
 
 ```bash
-# Full Docker integration test
+# Pełny test integracyjny Docker
 yarn test:docker
 
-# Test config loading specifically
+# Test specyficzny dla ładowania konfiguracji
 yarn test:docker:config
 
-# Run all tests (unit + integration + Docker)
+# Uruchom wszystkie testy (jednostkowe + integracyjne + Docker)
 yarn test:all
 ```
 
-Or using Make:
+Lub używając Make:
 
 ```bash
-# Quick Docker build test
+# Szybki test budowania Docker
 make test-docker
 
-# Full integration test suite
+# Pełny zestaw testów integracyjnych
 make test-docker-full
 
-# Config loading test
+# Test ładowania konfiguracji
 make test-docker-config
 
-# Docker Compose test
+# Test Docker Compose
 make test-docker-compose
 ```
 
-See the [Docker Tests README](tests/docker/README.md) for more details.
+Zobacz [Docker Tests README](tests/docker/README.md) dla więcej szczegółów.
 
-## 📊 Performance
+## 📊 Wydajność
 
-The proxy is built on Node.js native HTTP/2 implementation and is designed for high performance:
+Proxy jest zbudowany na natywnej implementacji HTTP/2 w Node.js i zaprojektowany z myślą o wysokiej wydajności:
 
-- Efficient stream handling
-- Minimal overhead
-- Connection pooling
-- Automatic HTTP/1.1 fallback
+- Efektywna obsługa strumieni
+- Minimalny narzut
+- Pooling połączeń
+- Automatyczny powrót do HTTP/1.1
 
-For production deployments, consider:
+Dla wdrożeń produkcyjnych rozważ:
 
-- Using a process manager (PM2, systemd)
-- Enabling clustering for multi-core systems
-- Monitoring with health checks
-- Setting up proper logging
+- Użycie menedżera procesów (PM2, systemd)
+- Włączenie klastrowania dla systemów wielordzeniowych
+- Monitorowanie za pomocą health checks
+- Skonfigurowanie odpowiedniego logowania
+

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ProxyConfig, loadConfig, getConfig, initConfig } from '../../../src/utils/config';
+import { ProxyConfig, loadConfig } from '../../../src/utils/config';
 import type { ServerConfig, RouteConfig } from '../../../src/utils/config';
 
 describe('ProxyConfig', () => {

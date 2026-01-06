@@ -27,6 +27,9 @@ describe('ProxyServer Integration Tests', () => {
       } else if (req.url === '/status/404') {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
+      } else if (req.url === '/robiki-proxy/health') {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Backend received health check request - this should not happen');
       } else {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('OK');
@@ -400,6 +403,144 @@ describe('ProxyServer Integration Tests', () => {
 
       expect(headers['access-control-allow-origin']).toBe('https://route-specific.com');
       expect(headers['access-control-allow-methods']).toBe('GET, POST');
+    });
+  });
+
+  describe('Health check endpoint', () => {
+    it('should respond to health check requests', async () => {
+      const config: ServerConfig = {
+        routes: {
+          'test.local': {
+            target: `127.0.0.1:${mockBackendPort}`,
+          },
+        },
+      };
+
+      const proxy = new ProxyServer(loadConfig(config));
+      await proxy.start();
+
+      try {
+        const response = await new Promise<{ statusCode?: number; data: string }>((resolve, reject) => {
+          const req = require('node:http').request(
+            {
+              hostname: '127.0.0.1',
+              port: 8080,
+              path: '/robiki-proxy/health',
+              method: 'GET',
+            },
+            (res: any) => {
+              let data = '';
+              res.on('data', (chunk: Buffer) => {
+                data += chunk.toString();
+              });
+              res.on('end', () => {
+                resolve({ statusCode: res.statusCode, data });
+              });
+            }
+          );
+          req.on('error', reject);
+          req.end();
+        });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.data).toBe('OK');
+      } finally {
+        await proxy.stop();
+      }
+    });
+
+    it('should not proxy health check requests to backend', async () => {
+      const config: ServerConfig = {
+        routes: {
+          'test.local': {
+            target: `127.0.0.1:${mockBackendPort}`,
+          },
+        },
+      };
+
+      const proxy = new ProxyServer(loadConfig(config));
+      await proxy.start();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      try {
+        const response = await new Promise<{ statusCode?: number; data: string }>((resolve, reject) => {
+          const req = require('node:http').request(
+            {
+              hostname: '127.0.0.1',
+              port: 8080,
+              path: '/robiki-proxy/health',
+              method: 'GET',
+              headers: {
+                Host: 'nonexistent.local',
+              },
+            },
+            (res: any) => {
+              let data = '';
+              res.on('data', (chunk: Buffer) => {
+                data += chunk.toString();
+              });
+              res.on('end', () => {
+                resolve({ statusCode: res.statusCode, data });
+              });
+            }
+          );
+          req.on('error', reject);
+          req.end();
+        });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.data).toBe('OK');
+      } finally {
+        await proxy.stop();
+      }
+    });
+
+    it('should only respond to GET requests on health endpoint', async () => {
+      const config: ServerConfig = {
+        routes: {
+          'test.local': {
+            target: `127.0.0.1:${mockBackendPort}`,
+          },
+        },
+      };
+
+      const proxy = new ProxyServer(loadConfig(config));
+      await proxy.start();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      try {
+        const response = await new Promise<{ statusCode?: number; data: string }>((resolve, reject) => {
+          const req = require('node:http').request(
+            {
+              hostname: '127.0.0.1',
+              port: 8080,
+              path: '/robiki-proxy/health',
+              method: 'POST',
+              headers: {
+                Host: 'test.local',
+              },
+            },
+            (res: any) => {
+              let data = '';
+              res.on('data', (chunk: Buffer) => {
+                data += chunk.toString();
+              });
+              res.on('end', () => {
+                resolve({ statusCode: res.statusCode, data });
+              });
+            }
+          );
+          req.on('error', reject);
+          req.end();
+        });
+
+        expect(response.statusCode).not.toBe(200);
+        expect(response.data).not.toBe('OK');
+      } finally {
+        await proxy.stop();
+      }
     });
   });
 });

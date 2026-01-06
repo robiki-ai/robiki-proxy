@@ -3,13 +3,14 @@ import { createServer as createHTTP, type Server as HTTPServer } from 'node:http
 import { WebSocketServer, WebSocket } from 'ws';
 import { websocket } from '../../src/utils/server';
 import { websocketAPIProxyHandler } from '../../src/connections/websocket';
-import { initConfig } from '../../src/utils/config';
+import { loadConfig, type ProxyConfig } from '../../src/utils/config';
 import type { ServerConfig } from '../../src/utils/config';
 
 describe('WebSocket Advanced Tests', () => {
   let mockBackendServer: HTTPServer;
   let mockBackendWss: WebSocketServer;
   let mockBackendPort: number;
+  let proxyConfig: ProxyConfig;
   const receivedMessages: string[] = [];
 
   beforeAll(async () => {
@@ -69,7 +70,7 @@ describe('WebSocket Advanced Tests', () => {
       },
     };
 
-    initConfig(config);
+    proxyConfig = loadConfig(config);
   });
 
   afterAll(async () => {
@@ -99,7 +100,7 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9885;
 
-      websocket(proxyServer, websocketAPIProxyHandler);
+      websocket(proxyServer, (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig));
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);
@@ -150,7 +151,7 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9886;
 
-      websocket(proxyServer, websocketAPIProxyHandler);
+      websocket(proxyServer, (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig));
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);
@@ -201,7 +202,7 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9887;
 
-      websocket(proxyServer, websocketAPIProxyHandler);
+      websocket(proxyServer, (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig));
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);
@@ -258,7 +259,7 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9888;
 
-      websocket(proxyServer, websocketAPIProxyHandler);
+      websocket(proxyServer, (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig));
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);
@@ -335,7 +336,7 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9889;
 
-      websocket(proxyServer, websocketAPIProxyHandler);
+      websocket(proxyServer, (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig));
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);
@@ -381,13 +382,17 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9890;
 
-      websocket(proxyServer, websocketAPIProxyHandler, async (info) => {
-        const token = info.headers['authorization'];
-        if (token === 'Bearer valid-token') {
-          return { status: true };
+      websocket(
+        proxyServer,
+        (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig),
+        async (info) => {
+          const token = info.headers['authorization'];
+          if (token === 'Bearer valid-token') {
+            return { status: true };
+          }
+          return { status: false, code: 401, message: 'Unauthorized' };
         }
-        return { status: false, code: 401, message: 'Unauthorized' };
-      });
+      );
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);
@@ -425,13 +430,17 @@ describe('WebSocket Advanced Tests', () => {
       });
       const proxyPort = 9891;
 
-      websocket(proxyServer, websocketAPIProxyHandler, async (info) => {
-        const token = info.headers['authorization'];
-        if (token === 'Bearer valid-token') {
-          return { status: true };
+      websocket(
+        proxyServer,
+        (req, socket, headers) => websocketAPIProxyHandler(req, socket, headers, proxyConfig),
+        async (info) => {
+          const token = info.headers['authorization'];
+          if (token === 'Bearer valid-token') {
+            return { status: true };
+          }
+          return { status: false, code: 401, message: 'Unauthorized' };
         }
-        return { status: false, code: 401, message: 'Unauthorized' };
-      });
+      );
 
       await new Promise<void>((resolve) => {
         proxyServer.listen(proxyPort, '127.0.0.1', resolve);

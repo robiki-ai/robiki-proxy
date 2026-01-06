@@ -30,18 +30,31 @@ export class ProxyServer {
     };
 
     const createServers = ({ ssl, ports }: { ssl: any; ports: number[] }) => {
+      const boundRestHandler = (req: any, res: any) => {
+        /* Health check endpoint */
+        if (req.url === '/robiki-proxy/health' && req.method === 'GET') {
+          res.writeHead(200, { 'Content-Type': 'text/plain' });
+          res.end('OK');
+          return;
+        }
+        return restAPIProxyHandler(req, res, this.config);
+      };
+      const boundStreamHandler = (stream: any, headers: any) => streamAPIProxyHandler(stream, headers, this.config);
+      const boundWebsocketHandler = (req: any, socket: any, headers: any) =>
+        websocketAPIProxyHandler(req, socket, headers, this.config);
+
       for (const port of ports) {
         let server: NET | HTTP;
 
         if (ssl) {
           /* Use HTTP/2 with SSL */
-          server = http2(restAPIProxyHandler, streamAPIProxyHandler, { ...ssl, port });
+          server = http2(boundRestHandler, boundStreamHandler, { ...ssl, port });
         } else {
           /* Use HTTP/1.1 without SSL */
-          server = http(restAPIProxyHandler, { port });
+          server = http(boundRestHandler, { port });
         }
 
-        websocket(server, websocketAPIProxyHandler, (info) => this.config.validate(info));
+        websocket(server, boundWebsocketHandler, (info) => this.config.validate(info));
         this.servers.push(server);
       }
       return this.servers;
@@ -68,9 +81,17 @@ export class ProxyServer {
    */
   async stop(): Promise<void> {
     console.log('Stopping proxy server...');
-    for (const server of this.servers) {
-      server.close();
-    }
+    await Promise.all(
+      this.servers.map(
+        (server) =>
+          new Promise<void>((resolve, reject) => {
+            server.close((err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          })
+      )
+    );
     this.servers = [];
     console.log('Proxy server stopped');
   }
@@ -128,21 +149,35 @@ export function createCustomProxy(
   };
 
   const createServers = ({ ssl, ports, proxyConfig }: { ssl: any; ports: number[]; proxyConfig: ProxyConfig }) => {
+    // Create bound handlers with config
+    const boundRestHandler = (req: any, res: any) => {
+      /* Health check endpoint */
+      if (req.url === '/robiki-proxy/health' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('OK');
+        return;
+      }
+      return restAPIProxyHandler(req, res, proxyConfig);
+    };
+    const boundStreamHandler = (stream: any, headers: any) => streamAPIProxyHandler(stream, headers, proxyConfig);
+    const boundWebsocketHandler = (req: any, socket: any, headers: any) =>
+      websocketAPIProxyHandler(req, socket, headers, proxyConfig);
+
     for (const port of ports) {
       let server: NET | HTTP;
 
       if (ssl) {
         /* Use HTTP/2 with SSL */
-        server = http2(handlers.rest || restAPIProxyHandler, handlers.stream || streamAPIProxyHandler, {
+        server = http2(handlers.rest || boundRestHandler, handlers.stream || boundStreamHandler, {
           ...ssl,
           port,
         });
       } else {
         /* Use HTTP/1.1 without SSL */
-        server = http(handlers.rest || restAPIProxyHandler, { port });
+        server = http(handlers.rest || boundRestHandler, { port });
       }
 
-      websocket(server, handlers.websocket || websocketAPIProxyHandler);
+      websocket(server, handlers.websocket || boundWebsocketHandler, (info) => proxyConfig.validate(info));
       servers.push(server);
     }
     return proxyConfig;
@@ -155,9 +190,17 @@ export function createCustomProxy(
       getConfig: () => proxyConfig,
       start: async () => {},
       stop: async () => {
-        for (const server of servers) {
-          server.close();
-        }
+        await Promise.all(
+          servers.map(
+            (server) =>
+              new Promise<void>((resolve, reject) => {
+                server.close((err) => {
+                  if (err) reject(err);
+                  else resolve();
+                });
+              })
+          )
+        );
       },
     } as ProxyServer;
   };
@@ -179,7 +222,7 @@ export function createCustomProxy(
 export { restAPIProxyHandler, streamAPIProxyHandler, websocketAPIProxyHandler } from './connections';
 
 /* Export configuration utilities */
-export { loadConfig, getConfig } from './utils/config';
+export { loadConfig } from './utils/config';
 
 /* Export types */
 export type { ServerConfig, RouteConfig, CorsConfig, CertificateConfig, ProxyConfig } from './utils/config';

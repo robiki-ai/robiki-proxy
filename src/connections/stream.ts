@@ -1,10 +1,15 @@
 import { connect, type IncomingHttpHeaders, type ServerHttp2Stream } from 'node:http2';
 import { day } from '../utils/time';
 import { isMediaFile } from '../utils/files';
-import { getConfig } from '../utils/config';
+import { type ProxyConfig } from '../utils/config';
 
-export const streamAPIProxyHandler = async (stream: ServerHttp2Stream, headers: IncomingHttpHeaders) => {
-  const config = getConfig();
+const DEBUG = process.env.DEBUG === 'true';
+
+export const streamAPIProxyHandler = async (
+  stream: ServerHttp2Stream,
+  headers: IncomingHttpHeaders,
+  config: ProxyConfig
+) => {
   const { target, ssl, remap } = config.getTarget(headers[':authority'] || '');
   if (!ssl) return;
   if (!target) {
@@ -12,11 +17,16 @@ export const streamAPIProxyHandler = async (stream: ServerHttp2Stream, headers: 
     return;
   }
 
-  console.log('HTTP2 stream proxy', `${ssl ? 'https' : 'http'}://${target}${headers[':path']}`, headers[':authority']);
+  if (DEBUG)
+    console.log(
+      'HTTP2 stream proxy',
+      `${ssl ? 'https' : 'http'}://${target}${headers[':path']}`,
+      headers[':authority']
+    );
 
   if (remap) headers[':path'] = remap(headers[':path'] || '');
 
-  console.log('Proxy Request::', headers[':path']);
+  if (DEBUG) console.log('Proxy Request::', headers[':path']);
 
   const proxy = connect(`https://${target}${headers[':path']}`, {
     ...ssl,
@@ -29,7 +39,7 @@ export const streamAPIProxyHandler = async (stream: ServerHttp2Stream, headers: 
     /* HEADERS */
     request.on('response', (headerResponse) => {
       if (!stream.writableEnded && !stream.closed && !stream.destroyed) {
-        console.log('Proxy Response::', headerResponse[':status'], `for ${headers[':path']}`);
+        if (DEBUG) console.log('Proxy Response::', headerResponse[':status'], `for ${headers[':path']}`);
         if (headers[':path'] && isMediaFile(headers[':path'])) {
           headerResponse['cache-control'] = `public, max-age=${day()}`;
         }
@@ -62,7 +72,7 @@ export const streamAPIProxyHandler = async (stream: ServerHttp2Stream, headers: 
     });
 
     stream.on('error', (error) => {
-      console.error('HTTP2 stream proxy error:', error);
+      if (DEBUG) console.error('HTTP2 stream proxy error:', error);
       if (!request.destroyed) request.destroy(error);
       if (!proxy.closed) proxy.close();
     });
@@ -85,19 +95,19 @@ export const streamAPIProxyHandler = async (stream: ServerHttp2Stream, headers: 
     });
 
     request.on('error', (error) => {
-      console.error('HTTP2 request proxy error:', error);
+      if (DEBUG) console.error('HTTP2 request proxy error:', error);
       if (!stream.destroyed) stream.destroy(error);
       return !proxy.closed && proxy.close();
     });
 
     proxy.on('timeout', () => {
-      console.error('HTTP/2 client timeout');
+      if (DEBUG) console.error('HTTP/2 client timeout');
       if (!stream.destroyed) stream.destroy(new Error('HTTP/2 client timeout'));
     });
   });
 
   proxy.on('error', (error) => {
-    console.error('HTTP2 proxy connection error:', error);
+    if (DEBUG) console.error('HTTP2 proxy connection error:', error);
     if (!stream.destroyed) {
       stream.destroy(error);
     }

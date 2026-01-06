@@ -1,29 +1,29 @@
-# 🚀 Robiki Proxy
+# 🚀 Robiki 代理
 
-> A high-performance, flexible HTTP/2 reverse proxy with WebSocket support, configurable routing, CORS, and request validation. Use it as an npm package in your Node.js application or as a standalone Docker container. Meant to be used as a domain proxy for local development environments only.
+> 一个高性能、灵活的 HTTP/2 反向代理，支持 WebSocket、可配置路由、CORS 和请求验证。可作为 npm 包在 Node.js 应用程序中使用，也可作为独立的 Docker 容器使用。仅用作本地开发环境的域名代理。
 
 [![npm version](https://img.shields.io/npm/v/@robiki/proxy.svg)](https://www.npmjs.com/package/@robiki/proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌍 Languages / Sprachen / 语言 / 言語 / Języki / Idiomas / Языки
+## 🌍 语言 / Languages / Sprachen / 言語 / Języki / Idiomas / Языки
 
 [English](README.md) | [Deutsch](README.de.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Polski](README.pl.md) | [Español](README.es.md) | [Русский](README.ru.md)
 
-## ✨ Features
+## ✨ 特性
 
-- **🔒 HTTP/2 & SSL/TLS Support**: Full HTTP/2 protocol support with automatic HTTP/1.1 fallback
-- **🔌 WebSocket Proxying**: Seamless WebSocket connection handling and proxying
-- **🌐 Flexible Routing**: Configure routes by domain/host with wildcard support
-- **🛡️ CORS Management**: Global and per-route CORS configuration
-- **✅ Request Validation**: Custom validation logic for authentication, rate limiting, etc.
-- **🔄 URL Remapping**: Transform URLs before forwarding to target services
-- **📦 Dual Usage**: Use as npm package or Docker container
-- **🎯 Multi-Port Support**: Listen on multiple ports simultaneously
-- **⚡ High Performance**: Built on Node.js native HTTP/2 implementation
+- **🔒 HTTP/2 和 SSL/TLS 支持**：完整的 HTTP/2 协议支持，自动回退到 HTTP/1.1
+- **🔌 WebSocket 代理**：无缝的 WebSocket 连接处理和代理
+- **🌐 灵活路由**：按域名/主机配置路由，支持通配符
+- **🛡️ CORS 管理**：全局和每个路由的 CORS 配置
+- **✅ 请求验证**：用于身份验证、速率限制等的自定义验证逻辑
+- **🔄 URL 重映射**：在转发到目标服务之前转换 URL
+- **📦 双重用途**：可作为 npm 包或 Docker 容器使用
+- **🎯 多端口支持**：同时监听多个端口
+- **⚡ 高性能**：基于 Node.js 原生 HTTP/2 实现
 
-## 📦 Installation
+## 📦 安装
 
-### As an npm Package
+### 作为 npm 包
 
 ```bash
 npm install @robiki/proxy
@@ -33,13 +33,13 @@ npm install @robiki/proxy
 yarn add @robiki/proxy
 ```
 
-### As a Docker Container
+### 作为 Docker 容器
 
 ```bash
 docker pull robiki/proxy:latest
 ```
 
-### As a Docker Compose Service
+### 作为 Docker Compose 服务
 
 ```yaml
 services:
@@ -58,14 +58,14 @@ services:
       - app-network
 ```
 
-## Notes
+## 注意事项
 
-- Hosts that are configured locally should be added to your local `hosts` file.
-- If you are using a custom certificates, you need to add the certificate files to the `certs` directory.
+- 本地配置的主机应添加到本地 `hosts` 文件中。
+- 如果您使用自定义证书，需要将证书文件添加到 `certs` 目录。
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-### Using as npm Package
+### 作为 npm 包使用
 
 ```javascript
 import { createProxy } from '@robiki/proxy';
@@ -89,12 +89,12 @@ const proxy = await createProxy({
   },
 });
 
-console.log('Proxy server is running!');
+console.log('代理服务器正在运行！');
 ```
 
-### Using with Docker
+### 使用 Docker
 
-1. Create a `proxy.config.json` file:
+1. 创建 `proxy.config.json` 文件：
 
 ```json
 {
@@ -117,7 +117,7 @@ console.log('Proxy server is running!');
 }
 ```
 
-2. Create a `docker-compose.yml`:
+2. 创建 `docker-compose.yml`：
 
 ```yaml
 version: '3.8'
@@ -151,17 +151,17 @@ networks:
     driver: bridge
 ```
 
-3. Start the services:
+3. 启动服务：
 
 ```bash
 docker-compose up -d
 ```
 
-## 📖 Configuration
+## 📖 配置
 
-### Configuration File
+### 配置文件
 
-Create a `proxy.config.json` file with the following structure:
+创建具有以下结构的 `proxy.config.json` 文件：
 
 ```json
 {
@@ -196,32 +196,32 @@ Create a `proxy.config.json` file with the following structure:
 }
 ```
 
-### Environment Variables
+### 环境变量
 
-You can also configure the proxy using environment variables:
+您还可以使用环境变量配置代理：
 
 ```bash
-# SSL Configuration
+# SSL 配置
 SSL_KEY=/app/certs/key.pem
 SSL_CERT=/app/certs/cert.pem
 SSL_CA=/app/certs/ca.pem
 SSL_ALLOW_HTTP1=true
 
-# CORS Configuration
+# CORS 配置
 CORS_ORIGIN=*
 CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
 CORS_HEADERS=Content-Type,Authorization
 CORS_CREDENTIALS=true
 
-# Debug Mode
-DEBUG=true  # Enable detailed logging for proxy connections and errors
+# 调试模式
+DEBUG=true  # 启用代理连接和错误的详细日志记录
 ```
 
-## 🎯 Advanced Usage
+## 🎯 高级用法
 
-### URL Remapping
+### URL 重映射
 
-Transform URLs before forwarding to target services:
+在转发到目标服务之前转换 URL：
 
 ```javascript
 const config = {
@@ -230,7 +230,7 @@ const config = {
       target: 'backend:3000',
       ssl: true,
       remap: (url) => {
-        // Remove /api prefix
+        // 删除 /api 前缀
         return url.replace(/^\/api/, '');
       },
     },
@@ -238,19 +238,19 @@ const config = {
 };
 ```
 
-### Request Validation
+### 请求验证
 
-Add custom validation logic for authentication, rate limiting, etc.:
+为身份验证、速率限制等添加自定义验证逻辑：
 
 ```javascript
 const config = {
-  // Global validation
+  // 全局验证
   validate: async (info) => {
     if (!info.headers.authorization) {
       return {
         status: false,
         code: 401,
-        message: 'Unauthorized',
+        message: '未授权',
         headers: { 'www-authenticate': 'Bearer' },
       };
     }
@@ -260,14 +260,14 @@ const config = {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Route-specific validation
+      // 路由特定验证
       validate: async (info) => {
         const rateLimit = await checkRateLimit(info.remoteAddress);
         if (!rateLimit.allowed) {
           return {
             status: false,
             code: 429,
-            message: 'Too Many Requests',
+            message: '请求过多',
           };
         }
         return { status: true };
@@ -277,13 +277,13 @@ const config = {
 };
 ```
 
-### Custom CORS Configuration
+### 自定义 CORS 配置
 
-Configure CORS globally or per-route:
+全局或按路由配置 CORS：
 
 ```javascript
 const config = {
-  // Global CORS
+  // 全局 CORS
   cors: {
     origin: ['https://example.com', 'https://www.example.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -295,7 +295,7 @@ const config = {
     'api.example.com': {
       target: 'backend:3000',
       ssl: true,
-      // Route-specific CORS (overrides global)
+      // 路由特定 CORS（覆盖全局）
       cors: {
         origin: '*',
         credentials: false,
@@ -305,9 +305,9 @@ const config = {
 };
 ```
 
-### Custom Handlers
+### 自定义处理程序
 
-Create custom request handlers for advanced use cases:
+为高级用例创建自定义请求处理程序：
 
 ```javascript
 import { createCustomProxy } from '@robiki/proxy';
@@ -317,7 +317,7 @@ const customRestHandler = async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ status: 'ok' }));
   }
-  // Fall back to default proxy behavior
+  // 回退到默认代理行为
   const { restAPIProxyHandler } = await import('@robiki/proxy/connections');
   return restAPIProxyHandler(req, res);
 };
@@ -329,27 +329,27 @@ const proxy = await createCustomProxy(config, {
 });
 ```
 
-## 🔧 API Reference
+## 🔧 API 参考
 
 ### `createProxy(config: ServerConfig): Promise<ProxyServer>`
 
-Creates and starts a proxy server with the given configuration.
+使用给定配置创建并启动代理服务器。
 
-**Parameters:**
+**参数：**
 
-- `config`: Server configuration object
+- `config`：服务器配置对象
 
-**Returns:** Promise that resolves to a `ProxyServer` instance
+**返回：** 解析为 `ProxyServer` 实例的 Promise
 
 ### `ProxyServer`
 
-**Methods:**
+**方法：**
 
-- `start()`: Start the proxy server
-- `stop()`: Stop the proxy server
-- `getConfig()`: Get the current configuration
+- `start()`：启动代理服务器
+- `stop()`：停止代理服务器
+- `getConfig()`：获取当前配置
 
-### Configuration Types
+### 配置类型
 
 #### `ServerConfig`
 
@@ -405,11 +405,11 @@ interface ConnectionInfo {
 }
 ```
 
-## 🐳 Docker Usage
+## 🐳 Docker 使用
 
-### Using in Another Project
+### 在另一个项目中使用
 
-1. Add the proxy to your `docker-compose.yml`:
+1. 将代理添加到您的 `docker-compose.yml`：
 
 ```yaml
 services:
@@ -430,58 +430,58 @@ services:
       - your-network
 ```
 
-2. Configure routes in `proxy.config.json` to point to your services
+2. 在 `proxy.config.json` 中配置路由以指向您的服务
 
-3. Start your stack:
+3. 启动您的堆栈：
 
 ```bash
 docker-compose up -d
 ```
 
-### Building Custom Image
+### 构建自定义镜像
 
-Create a custom Dockerfile:
+创建自定义 Dockerfile：
 
 ```dockerfile
 FROM robiki/proxy:latest
 
-# Copy your configuration
+# 复制您的配置
 COPY proxy.config.json /app/proxy.config.json
 COPY certs /app/certs
 
-# Set environment variables
+# 设置环境变量
 ENV PROXY_CONFIG=/app/proxy.config.json
 ```
 
-## 📚 Examples
+## 📚 示例
 
-Check the `examples/` directory for more usage examples:
+查看 `examples/` 目录以获取更多使用示例：
 
-- `basic-usage.js` - Simple proxy setup
-- `advanced-usage.js` - Advanced features (validation, CORS, remapping)
-- `custom-handlers.js` - Custom request handlers
-- `docker-compose.example.yml` - Complete Docker setup
+- `basic-usage.js` - 简单的代理设置
+- `advanced-usage.js` - 高级功能（验证、CORS、重映射）
+- `custom-handlers.js` - 自定义请求处理程序
+- `docker-compose.example.yml` - 完整的 Docker 设置
 
-## 🔐 SSL/TLS Certificates
+## 🔐 SSL/TLS 证书
 
-### Generating Self-Signed Certificates
+### 生成自签名证书
 
-For development:
+用于开发：
 
 ```bash
 mkdir -p certs
 openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes
 ```
 
-### Using Let's Encrypt
+### 使用 Let's Encrypt
 
-For production, use Let's Encrypt certificates:
+用于生产，使用 Let's Encrypt 证书：
 
 ```bash
 certbot certonly --standalone -d example.com
 ```
 
-Then reference them in your config:
+然后在您的配置中引用它们：
 
 ```json
 {
@@ -492,43 +492,43 @@ Then reference them in your config:
 }
 ```
 
-## 🤝 Contributing
+## 🤝 贡献
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+欢迎贡献！请随时提交 Pull Request。
 
-## 📄 License
+## 📄 许可证
 
 MIT © Robiki sp. z o.o.
 
-## 🔗 Links
+## 🔗 链接
 
-- [GitHub Repository](https://github.com/robiki-ai/robiki-proxy)
-- [npm Package](https://www.npmjs.com/package/@robiki/proxy)
-- [Issue Tracker](https://github.com/robiki-ai/robiki-proxy/issues)
+- [GitHub 仓库](https://github.com/robiki-ai/robiki-proxy)
+- [npm 包](https://www.npmjs.com/package/@robiki/proxy)
+- [问题跟踪器](https://github.com/robiki-ai/robiki-proxy/issues)
 
-## 💡 Use Cases
+## 💡 用例
 
-- **Microservices Architecture**: Route requests to different services based on domain/path
-- **Development Environment**: Local proxy for testing multiple services
-- **API Gateway**: Centralized entry point with authentication and rate limiting
-- **SSL Termination**: Handle SSL/TLS at the proxy level
-- **CORS Management**: Centralized CORS configuration
-- **Load Balancing**: Distribute traffic across multiple instances (with custom handlers)
+- **微服务架构**：根据域名/路径将请求路由到不同的服务
+- **开发环境**：用于测试多个服务的本地代理
+- **API 网关**：具有身份验证和速率限制的集中入口点
+- **SSL 终止**：在代理级别处理 SSL/TLS
+- **CORS 管理**：集中式 CORS 配置
+- **负载均衡**：在多个实例之间分配流量（使用自定义处理程序）
 
-## 🛠️ Troubleshooting
+## 🛠️ 故障排除
 
-### Debug Mode
+### 调试模式
 
-Enable detailed logging to troubleshoot connection issues:
+启用详细日志记录以排除连接问题：
 
 ```bash
-# Enable debug mode
+# 启用调试模式
 DEBUG=true node your-proxy-script.js
 
-# Or with Docker
+# 或使用 Docker
 docker run -e DEBUG=true robiki/proxy:latest
 
-# Or in docker-compose.yml
+# 或在 docker-compose.yml 中
 services:
   proxy:
     image: robiki/proxy:latest
@@ -536,104 +536,104 @@ services:
       - DEBUG=true
 ```
 
-When `DEBUG=true`, the proxy will log:
+当 `DEBUG=true` 时，代理将记录：
+- 所有代理连接尝试（REST、WebSocket、HTTP/2 流）
+- 请求和响应详细信息
+- 连接错误和超时
+- 代理错误和客户端错误
 
-- All proxy connection attempts (REST, WebSocket, HTTP/2 streams)
-- Request and response details
-- Connection errors and timeouts
-- Proxy errors and client errors
+### 端口已被占用
 
-### Port Already in Use
-
-The proxy will automatically attempt to kill processes on the configured ports. If this fails, manually free the ports:
+代理将自动尝试终止配置端口上的进程。如果失败，请手动释放端口：
 
 ```bash
 lsof -ti:443 | xargs kill -9
 lsof -ti:8080 | xargs kill -9
 ```
 
-### SSL Certificate Errors
+### SSL 证书错误
 
-Ensure your certificate files are readable and in the correct format (PEM). For development, use self-signed certificates.
+确保您的证书文件可读并且格式正确（PEM）。对于开发，使用自签名证书。
 
-### WebSocket Connection Issues
+### WebSocket 连接问题
 
-Make sure your WebSocket routes are configured with the correct protocol (ws/wss) and that the target service supports WebSocket connections.
+确保您的 WebSocket 路由配置了正确的协议（ws/wss），并且目标服务支持 WebSocket 连接。
 
-## 🧪 Testing
+## 🧪 测试
 
-Robiki Proxy includes a comprehensive test suite covering unit tests, integration tests, and advanced scenarios.
+Robiki Proxy 包含一个全面的测试套件，涵盖单元测试、集成测试和高级场景。
 
-### Running Tests
+### 运行测试
 
 ```bash
-# Run all tests
+# 运行所有测试
 yarn test
 
-# Run tests in watch mode
+# 在监视模式下运行测试
 yarn test:watch
 
-# Run tests with coverage
+# 运行带覆盖率的测试
 yarn test:coverage
 
-# Run tests with UI
+# 使用 UI 运行测试
 yarn test:ui
 ```
 
-### Test Coverage
+### 测试覆盖率
 
-The test suite includes:
+测试套件包括：
 
-- **Unit Tests**: Configuration, utilities, header conversion, CORS handling
-- **Integration Tests**: HTTP proxying, route resolution, validation, config loading
-- **Advanced Tests**: WebSocket proxying, HTTP/2 streams, concurrent connections
-- **Docker Tests**: Container builds, config loading, runtime behavior
+- **单元测试**：配置、实用程序、标头转换、CORS 处理
+- **集成测试**：HTTP 代理、路由解析、验证、配置加载
+- **高级测试**：WebSocket 代理、HTTP/2 流、并发连接
+- **Docker 测试**：容器构建、配置加载、运行时行为
 
-### Docker Tests
+### Docker 测试
 
-Run Docker integration tests:
+运行 Docker 集成测试：
 
 ```bash
-# Full Docker integration test
+# 完整的 Docker 集成测试
 yarn test:docker
 
-# Test config loading specifically
+# 专门测试配置加载
 yarn test:docker:config
 
-# Run all tests (unit + integration + Docker)
+# 运行所有测试（单元 + 集成 + Docker）
 yarn test:all
 ```
 
-Or using Make:
+或使用 Make：
 
 ```bash
-# Quick Docker build test
+# 快速 Docker 构建测试
 make test-docker
 
-# Full integration test suite
+# 完整的集成测试套件
 make test-docker-full
 
-# Config loading test
+# 配置加载测试
 make test-docker-config
 
-# Docker Compose test
+# Docker Compose 测试
 make test-docker-compose
 ```
 
-See the [Docker Tests README](tests/docker/README.md) for more details.
+有关更多详细信息，请参阅 [Docker 测试 README](tests/docker/README.md)。
 
-## 📊 Performance
+## 📊 性能
 
-The proxy is built on Node.js native HTTP/2 implementation and is designed for high performance:
+该代理基于 Node.js 原生 HTTP/2 实现，专为高性能而设计：
 
-- Efficient stream handling
-- Minimal overhead
-- Connection pooling
-- Automatic HTTP/1.1 fallback
+- 高效的流处理
+- 最小的开销
+- 连接池
+- 自动 HTTP/1.1 回退
 
-For production deployments, consider:
+对于生产部署，请考虑：
 
-- Using a process manager (PM2, systemd)
-- Enabling clustering for multi-core systems
-- Monitoring with health checks
-- Setting up proper logging
+- 使用进程管理器（PM2、systemd）
+- 为多核系统启用集群
+- 使用健康检查进行监控
+- 设置适当的日志记录
+

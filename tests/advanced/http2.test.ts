@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createServer, type Http2Server } from 'node:http2';
 import { streamAPIProxyHandler } from '../../src/connections/stream';
-import { initConfig } from '../../src/utils/config';
+import { loadConfig, type ProxyConfig } from '../../src/utils/config';
 import type { ServerConfig } from '../../src/utils/config';
 
 describe('HTTP/2 Advanced Tests', () => {
   let mockBackendServer: Http2Server;
   let mockBackendPort: number;
+  let proxyConfig: ProxyConfig;
 
   beforeAll(async () => {
     mockBackendPort = 9892;
@@ -58,7 +59,7 @@ describe('HTTP/2 Advanced Tests', () => {
       },
     };
 
-    initConfig(config);
+    proxyConfig = loadConfig(config);
   });
 
   afterAll(async () => {
@@ -95,7 +96,7 @@ describe('HTTP/2 Advanced Tests', () => {
       };
 
       expect(() => {
-        streamAPIProxyHandler(mockStream as any, headers);
+        streamAPIProxyHandler(mockStream as any, headers, proxyConfig);
       }).not.toThrow();
     });
   });

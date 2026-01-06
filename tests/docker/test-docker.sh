@@ -191,17 +191,45 @@ else
     test_result 1 "Config file not found in container"
 fi
 
-# Step 12: Check container health (if available)
+# Step 12: Test health check endpoint
 echo ""
-echo "🏥 Step 12: Checking container health..."
+echo "🏥 Step 12: Testing health check endpoint..."
+HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:18080/robiki-proxy/health 2>&1)
+
+if [ "$HEALTH_RESPONSE" = "200" ]; then
+    test_result 0 "Health check endpoint returns 200"
+else
+    test_result 1 "Health check endpoint failed" "Expected 200, got $HEALTH_RESPONSE"
+fi
+
+# Verify health check response body
+HEALTH_BODY=$(curl -s http://localhost:18080/robiki-proxy/health 2>&1)
+if [ "$HEALTH_BODY" = "OK" ]; then
+    test_result 0 "Health check returns correct body"
+else
+    test_result 1 "Health check body incorrect" "Expected 'OK', got '$HEALTH_BODY'"
+fi
+
+# Step 12b: Check Docker container health status
+echo ""
+echo "🏥 Step 12b: Checking Docker health status..."
+sleep 5  # Wait for health check to run
 HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' robiki-proxy-test 2>/dev/null || echo "no-health")
 
 if [ "$HEALTH_STATUS" = "healthy" ]; then
-    test_result 0 "Container is healthy"
+    test_result 0 "Container health status is healthy"
 elif [ "$HEALTH_STATUS" = "starting" ]; then
     echo -e "${YELLOW}⏳ Health check still starting${NC}"
+    # Wait a bit more and check again
+    sleep 10
+    HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' robiki-proxy-test 2>/dev/null || echo "no-health")
+    if [ "$HEALTH_STATUS" = "healthy" ]; then
+        test_result 0 "Container health status is healthy (after wait)"
+    else
+        test_result 1 "Container health check not healthy" "Status: $HEALTH_STATUS"
+    fi
 else
-    echo -e "${YELLOW}⚠️  Health status: $HEALTH_STATUS (may need more time)${NC}"
+    test_result 1 "Container health check failed" "Status: $HEALTH_STATUS"
 fi
 
 # Step 13: Check resource usage
