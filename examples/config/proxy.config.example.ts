@@ -122,6 +122,21 @@ const config: ServerConfig = {
         return url;
       },
     },
+    // Path-based routing: route specific paths to different backends
+    'example.com/api': {
+      target: 'backend-service:3000',
+      ssl: true,
+      cors: {
+        origin: ['https://example.com', 'https://www.example.com'],
+        credentials: true,
+      },
+    },
+    'example.com/api/v2': {
+      target: 'backend-v2-service:4000',
+      ssl: true,
+      // More specific paths take precedence over less specific ones
+      validate: createRateLimitValidator(200, 60000), // 200 requests per minute for v2
+    },
     '*.example.com': {
       target: 'wildcard-service:4000',
       ssl: true,

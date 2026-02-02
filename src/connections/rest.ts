@@ -11,7 +11,9 @@ export const restAPIProxyHandler = async (
   res: ServerResponse,
   config: ProxyConfig
 ): Promise<void> => {
-  const { target, ssl, remap } = config.getTarget(req.headers.host || req.headers[':authority']?.toString() || '');
+  const host = req.headers.host || req.headers[':authority']?.toString() || '';
+  const path = req.url?.split('?')[0] || '/';
+  const { target, ssl, remap } = config.getTarget(host, path);
 
   if (req.httpVersion === '2.0' && ssl) return;
 

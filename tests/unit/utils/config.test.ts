@@ -49,6 +49,18 @@ describe('ProxyConfig', () => {
           '*.wildcard.com': {
             target: 'localhost:5000',
           },
+          'example.dev': {
+            target: 'example-server:5184',
+            ssl: true,
+          },
+          'example.dev/api': {
+            target: 'example-server:3000',
+            ssl: true,
+          },
+          'example.dev/api/v2': {
+            target: 'example-server:4000',
+            ssl: true,
+          },
         },
       };
       proxyConfig = await loadConfig(config);
@@ -75,6 +87,36 @@ describe('ProxyConfig', () => {
     it('should return undefined for non-matching host', () => {
       const route = proxyConfig.getRoute('nonexistent.com');
       expect(route).toBeUndefined();
+    });
+
+    it('should return route for host with path', () => {
+      const route = proxyConfig.getRoute('example.dev', '/api');
+      expect(route).toBeDefined();
+      expect(route?.target).toBe('example-server:3000');
+    });
+
+    it('should return route for host with subpath', () => {
+      const route = proxyConfig.getRoute('example.dev', '/api/users');
+      expect(route).toBeDefined();
+      expect(route?.target).toBe('example-server:3000');
+    });
+
+    it('should return most specific route for nested paths', () => {
+      const route = proxyConfig.getRoute('example.dev', '/api/v2/users');
+      expect(route).toBeDefined();
+      expect(route?.target).toBe('example-server:4000');
+    });
+
+    it('should return base route when no path matches', () => {
+      const route = proxyConfig.getRoute('example.dev', '/other');
+      expect(route).toBeDefined();
+      expect(route?.target).toBe('example-server:5184');
+    });
+
+    it('should handle path without leading slash', () => {
+      const route = proxyConfig.getRoute('example.dev', 'api');
+      expect(route).toBeDefined();
+      expect(route?.target).toBe('example-server:3000');
     });
   });
 

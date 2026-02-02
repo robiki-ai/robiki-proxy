@@ -10,7 +10,9 @@ export const websocketAPIProxyHandler = async (
   headers: IncomingHttpHeaders,
   config: ProxyConfig
 ) => {
-  const { target, ssl, remap } = config.getTarget(req.headers.host || '');
+  const host = req.headers.host || '';
+  const path = req.url?.split('?')[0] || '/';
+  const { target, ssl, remap } = config.getTarget(host, path);
 
   if (!target) return socket.close();
 

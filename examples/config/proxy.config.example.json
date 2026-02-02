@@ -43,6 +43,21 @@
       "target": "frontend-service:8080",
       "ssl": false
     },
+    "example.com/api": {
+      "target": "backend-service:3000",
+      "ssl": true,
+      "cors": {
+        "origin": [
+          "https://example.com",
+          "https://www.example.com"
+        ],
+        "credentials": true
+      }
+    },
+    "example.com/api/v2": {
+      "target": "backend-v2-service:4000",
+      "ssl": true
+    },
     "*.example.com": {
       "target": "wildcard-service:4000",
       "ssl": true

@@ -85,8 +85,11 @@ export interface ProxyConfig {
   config: ServerConfig;
   sslConfig?: LoadedSSLConfig;
   getSSL: () => LoadedSSLConfig | undefined;
-  getRoute: (host: string) => RouteConfig | undefined;
-  getTarget: (host: string) => {
+  getRoute: (host: string, path?: string) => RouteConfig | undefined;
+  getTarget: (
+    host: string,
+    path?: string
+  ) => {
     target: string | undefined;
     ssl: LoadedSSLConfig | undefined;
     remap: ((url: string) => string) | undefined;
@@ -158,18 +161,55 @@ function initializeSSL(sslConfig: CertificateConfig): Promise<LoadedSSLConfig> {
 }
 
 /**
- * Get route configuration for a host
+ * Get route configuration for a host and optional path
  */
-function getRoute(config: ServerConfig, host: string): RouteConfig | undefined {
+function getRoute(config: ServerConfig, host: string, path?: string): RouteConfig | undefined {
+  const hostWithoutPort = host.split(':')[0];
+
+  /* If path is provided, try to match host+path combinations first (most specific) */
+  if (path) {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const hostPathKey = `${host}${normalizedPath}`;
+    if (config.routes[hostPathKey]) {
+      return config.routes[hostPathKey];
+    }
+    const hostWithoutPortPathKey = `${hostWithoutPort}${normalizedPath}`;
+    if (config.routes[hostWithoutPortPathKey]) {
+      return config.routes[hostWithoutPortPathKey];
+    }
+    const sortedRoutes = Object.entries(config.routes)
+      .filter(([pattern]) => {
+        const patternHost = pattern.split('/')[0];
+        const patternPath = pattern.substring(patternHost.length);
+
+        return (
+          patternPath &&
+          (patternHost === host || patternHost === hostWithoutPort) &&
+          normalizedPath.startsWith(patternPath)
+        );
+      })
+      .sort((a, b) => {
+        const pathA = a[0].substring(a[0].split('/')[0].length);
+        const pathB = b[0].substring(b[0].split('/')[0].length);
+        return pathB.length - pathA.length;
+      });
+
+    if (sortedRoutes.length > 0) {
+      return sortedRoutes[0][1];
+    }
+  }
+
+  /* Exact match with host:port (no path) */
   if (config.routes[host]) {
     return config.routes[host];
   }
 
-  const hostWithoutPort = host.split(':')[0];
+  /* Try exact match with host without port (no path) */
   if (config.routes[hostWithoutPort]) {
     return config.routes[hostWithoutPort];
   }
 
+  /* Try wildcard patterns */
   for (const [pattern, route] of Object.entries(config.routes)) {
     if (pattern.includes('*')) {
       const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
@@ -183,14 +223,15 @@ function getRoute(config: ServerConfig, host: string): RouteConfig | undefined {
 }
 
 /**
- * Get target for a host
+ * Get target for a host and optional path
  */
 function getTarget(
   config: ServerConfig,
   sslConfig: LoadedSSLConfig | undefined,
-  host: string
+  host: string,
+  path?: string
 ): { target: string | undefined; ssl: LoadedSSLConfig | undefined; remap: ((url: string) => string) | undefined } {
-  const route = getRoute(config, host);
+  const route = getRoute(config, host, path);
   if (!route) {
     return { target: undefined, ssl: undefined, remap: undefined };
   }
@@ -205,8 +246,8 @@ function getTarget(
 /**
  * Get CORS headers for a request
  */
-function getCorsHeaders(config: ServerConfig, origin: string, host?: string): OutgoingHttpHeaders {
-  const route = host ? getRoute(config, host) : undefined;
+function getCorsHeaders(config: ServerConfig, origin: string, host?: string, path?: string): OutgoingHttpHeaders {
+  const route = host ? getRoute(config, host, path) : undefined;
   const corsConfig = route?.cors || config.cors;
 
   if (!corsConfig) {
@@ -271,7 +312,7 @@ function getCorsHeaders(config: ServerConfig, origin: string, host?: string): Ou
  * Validate a request
  */
 function validateRequest(config: ServerConfig, info: ConnectionInfo): Promise<ForwardValidationResult> {
-  const route = getRoute(config, info.authority);
+  const route = getRoute(config, info.authority, info.path);
   if (route?.validate) return route.validate(info);
   if (config.validate) return config.validate(info);
 
@@ -293,8 +334,8 @@ function createProxyConfig(config: ServerConfig, sslConfig?: LoadedSSLConfig): P
     config,
     sslConfig,
     getSSL: () => sslConfig,
-    getRoute: (host: string) => getRoute(config, host),
-    getTarget: (host: string) => getTarget(config, sslConfig, host),
+    getRoute: (host: string, path?: string) => getRoute(config, host, path),
+    getTarget: (host: string, path?: string) => getTarget(config, sslConfig, host, path),
     getCorsHeaders: (origin: string, host?: string) => getCorsHeaders(config, origin, host),
     validate: (info: ConnectionInfo) => validateRequest(config, info),
     getPorts: () => getPorts(config),

@@ -9,7 +9,9 @@ export const streamAPIProxyHandler = async (
   headers: IncomingHttpHeaders,
   config: ProxyConfig
 ) => {
-  const { target, ssl, remap } = config.getTarget(headers[':authority'] || '');
+  const host = headers[':authority'] || '';
+  const path = headers[':path']?.toString().split('?')[0] || '/';
+  const { target, ssl, remap } = config.getTarget(host, path);
   if (!ssl) return;
   if (!target) {
     stream.destroy(new Error('Not Found'));
