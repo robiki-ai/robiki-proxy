@@ -57,7 +57,7 @@
     "test:docker:config": "make test-docker-config",
     "test:all": "yarn test && yarn test:docker",
     "prepublishOnly": "yarn build",
-    "publish:npm": "npm publish",
+    "publish:npm": "npm publish --registry=https://registry.npmjs.org",
     "publish:docker": "make docker-push-hub",
     "publish:docker:multiarch": "make docker-push-multiarch",
     "publish:all": "yarn publish:npm && yarn publish:docker"
