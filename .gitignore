@@ -45,3 +45,6 @@ coverage
 
 # Test artifacts
 .vitest-cache
+
+# Specstory
+.specstory

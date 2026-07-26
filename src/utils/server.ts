@@ -17,6 +17,7 @@ import { type TLSSocket, type Server as TLS } from 'node:tls';
 import { exec } from 'node:child_process';
 import WebSocket, { WebSocketServer } from 'ws';
 import { num } from './uuid';
+import { debug } from './console';
 
 export enum RequestType {
   API = 'api',
@@ -232,13 +233,17 @@ export const http = (routes: Router, opts?: HttpServerOpts): HTTP => {
     .listen(port, '0.0.0.0', () => {
       console.log(`Server is listening on 0.0.0.0:${port}`);
     })
-    .on('error', async (err) => {
+    .on('error', (err) => {
+      /* Never throw or reject from an 'error' listener: an unhandled
+         rejection here terminates the whole process on Node >= 15 */
       if (err && err.message.indexOf('EADDRINUSE') !== -1) {
         console.log(`Port ${port} is already in use, attempting to kill process...`);
-        return allocatePort(port).then(() => http(routes, opts));
+        allocatePort(port)
+          .then(() => http(routes, opts))
+          .catch((retryErr) => console.error(`Failed to recover port ${port}:`, retryErr));
+        return;
       }
-      console.log('Server error: ', err);
-      throw err;
+      console.error('Server error: ', err);
     });
 };
 
@@ -259,13 +264,23 @@ export const http2 = (routes?: Router, streams?: Streamer, opts?: Http2ServerOpt
       console.log(`Server is listening on 0.0.0.0:${opts?.port || 3000}`);
     })
     .on('stream', (stream, headers, flags) => streams && streams(stream, headers, flags))
-    .on('error', async (err) => {
+    .on('sessionError', (err: Error, session?: { destroyed: boolean; destroy: () => void }) => {
+      /* Abrupt client disconnects (ECONNRESET) surface here; once a listener
+         is registered, destroying the session is our responsibility */
+      debug('HTTP2 session error:', err);
+      if (session && !session.destroyed) session.destroy();
+    })
+    .on('error', (err) => {
+      /* Never throw or reject from an 'error' listener: an unhandled
+         rejection here terminates the whole process on Node >= 15 */
       if (err && err.message.indexOf('EADDRINUSE') !== -1) {
         console.log(`Port ${opts?.port || 3000} is already in use, attempting to kill process...`);
-        return allocatePort(opts?.port || 3000).then(() => http2(routes, streams, opts));
+        allocatePort(opts?.port || 3000)
+          .then(() => http2(routes, streams, opts))
+          .catch((retryErr) => console.error(`Failed to recover port ${opts?.port || 3000}:`, retryErr));
+        return;
       }
-      console.log('Server error: ', err);
-      throw err;
+      console.error('Server error: ', err);
     });
 };
 

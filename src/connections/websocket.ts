@@ -30,14 +30,32 @@ export const websocketAPIProxyHandler = async (
     }
   );
 
+  /* The client handshake completes before the upstream socket is open, so
+     early client messages must be buffered: ws throws synchronously when
+     sending on a CONNECTING socket, which would crash the whole process */
+  const pending: any[] = [];
+
+  proxy.on('open', () => {
+    for (const message of pending) proxy.send(message);
+    pending.length = 0;
+  });
+
   proxy.on('message', (message) => {
+    if (socket.readyState !== WebSocket.OPEN) return;
     if (message.toString('utf8').startsWith('{')) {
       socket.send(message.toString('utf8'));
     } else {
       socket.send(message);
     }
   });
-  socket.on('message', (message) => proxy.send(message));
+
+  socket.on('message', (message) => {
+    if (proxy.readyState === WebSocket.CONNECTING) {
+      pending.push(message);
+      return;
+    }
+    if (proxy.readyState === WebSocket.OPEN) proxy.send(message);
+  });
 
   proxy.on('close', () => socket.close());
   socket.on('close', () => proxy.close());
@@ -45,5 +63,12 @@ export const websocketAPIProxyHandler = async (
   proxy.on('error', (error) => {
     debug('WebSocket proxy error:', error);
     socket.close();
+  });
+
+  /* An 'error' event with no listener (abrupt disconnect, protocol
+     violation) throws an uncaught exception that kills the whole process */
+  socket.on('error', (error) => {
+    debug('WebSocket client error:', error);
+    proxy.close();
   });
 };

@@ -4,6 +4,27 @@ import { loadConfig, type ServerConfig, type ProxyConfig } from './utils/config'
 import type { Server as NET } from 'node:net';
 import type { Server as HTTP } from 'node:http';
 
+let processErrorHandlersInstalled = false;
+
+/**
+ * Process-wide safety net so a single bad connection cannot silently kill
+ * the proxy. Previously this only existed in standalone mode, so any usage
+ * via createProxy()/createCustomProxy() would exit on the first uncaught
+ * exception or unhandled rejection without any trace beyond stderr.
+ */
+function installProcessErrorHandlers(): void {
+  if (processErrorHandlersInstalled) return;
+  processErrorHandlersInstalled = true;
+
+  process.on('uncaughtException', function (error: Error) {
+    console.error('UNCAUGHT EXCEPTION: ', error);
+  });
+
+  process.on('unhandledRejection', function (reason: any) {
+    console.error('UNHANDLED REJECTION: ', reason);
+  });
+}
+
 /**
  * Proxy server instance
  */
@@ -19,6 +40,8 @@ export class ProxyServer {
    * Start the proxy server
    */
   async start(): Promise<void> {
+    installProcessErrorHandlers();
+
     const ssl = this.config.getSSL();
     const ports = this.config.getPorts();
 
@@ -138,6 +161,7 @@ export async function createCustomProxy(
   }
 ): Promise<ProxyServer> {
   console.log('STARTING CUSTOM PROXY SERVER....');
+  installProcessErrorHandlers();
 
   return loadConfig(config).then((proxyConfig) => {
     const servers: (NET | HTTP)[] = [];
@@ -211,16 +235,6 @@ export { RequestType } from './utils/server';
 
 /* Standalone mode - only run if this is the main module */
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const setupErrorHandlers = () => {
-    process.on('uncaughtException', function (error: Error) {
-      console.log('UNCAUGHT EXCEPTION: ', error);
-    });
-
-    process.on('unhandledRejection', function (reason: any, promise: Promise<any>) {
-      console.log('UNHANDLED REJECTION: ', reason, promise);
-    });
-  };
-
   const startProxyServer = async () => {
     return await createProxy();
   };
@@ -230,7 +244,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   };
 
-  setupErrorHandlers();
+  installProcessErrorHandlers();
 
   startProxyServer().catch((error) => handleStartupError(error));
 }

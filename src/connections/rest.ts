@@ -29,6 +29,13 @@ export const restAPIProxyHandler = async (
   const headers = req.httpVersion === '2.0' ? http2HeadersToHttp1Headers(req.headers) : req.headers;
   const method = req.httpVersion === '2.0' ? req.headers[':method']?.toString() : req.method;
 
+  /* A response that emits 'error' with no listener (e.g. the client
+     disconnects abruptly mid-write) throws an uncaught exception that kills
+     the whole process */
+  res.on('error', (error) => {
+    debug('Client response error:', error);
+  });
+
   debug(`Proxy Request :: ${req.url} ${method} ::`, headers);
   const proxy = requestFn(
     `${ssl ? 'https' : 'http'}://${target}${req.url || ''}`,
@@ -38,13 +45,28 @@ export const restAPIProxyHandler = async (
       headers,
     },
     (proxyRes) => {
+      /* Client may have disconnected while the backend was responding */
+      if (res.destroyed || res.writableEnded) {
+        proxyRes.destroy();
+        return;
+      }
+
       const responseHeaders = req.httpVersion === '2.0' ? http1ToHttp2Headers(proxyRes.headers) : proxyRes.headers;
 
       if (req.url && isMediaFile(req.url)) {
         responseHeaders['cache-control'] = `public, max-age=${day()}`;
       }
 
-      res.writeHead(proxyRes.statusCode || 500, responseHeaders);
+      try {
+        res.writeHead(proxyRes.statusCode || 500, responseHeaders);
+      } catch (error) {
+        /* Races with client teardown (e.g. HTTP/2 stream closed between the
+           check above and the write) throw instead of emitting 'error' */
+        debug('Failed to write response headers:', error);
+        proxyRes.destroy();
+        if (!res.destroyed) res.destroy();
+        return;
+      }
 
       proxyRes.on('data', (chunk) => {
         if (!res.writableEnded && !res.closed && !res.destroyed) {
@@ -70,6 +92,10 @@ export const restAPIProxyHandler = async (
     if (!res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'text/plain' });
       res.end('Bad Gateway');
+    } else if (!res.destroyed && !res.writableEnded) {
+      /* Backend died mid-response: destroy instead of end so the client
+         sees a truncated transfer rather than a seemingly complete one */
+      res.destroy(error);
     }
   });
 

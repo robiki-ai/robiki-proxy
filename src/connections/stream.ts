@@ -9,6 +9,14 @@ export const streamAPIProxyHandler = async (
   headers: IncomingHttpHeaders,
   config: ProxyConfig
 ) => {
+  /* Attached before anything else: a stream that emits 'error' with no
+     listener (e.g. the client disconnects abruptly before the upstream
+     session is established) throws an uncaught exception that kills the
+     whole process */
+  stream.on('error', (error) => {
+    debug('HTTP2 stream proxy error:', error);
+  });
+
   const { target, ssl, remap } = config.getTarget(headers[':authority'] || '');
   if (!ssl) return;
   if (!target) {
@@ -25,6 +33,12 @@ export const streamAPIProxyHandler = async (
   const proxy = connect(`https://${target}${headers[':path']}`, {
     ...ssl,
     rejectUnauthorized: false,
+  });
+
+  /* If the client goes away before the upstream session is established,
+     make sure the upstream session is torn down too */
+  stream.on('close', () => {
+    if (!proxy.closed && !proxy.destroyed) proxy.close();
   });
 
   proxy.on('connect', () => {
@@ -58,7 +72,9 @@ export const streamAPIProxyHandler = async (
       if (!request.closed && !request.destroyed) request.close();
     });
 
-    stream.on('goaway', (_, errorCode) => {
+    /* 'goaway' is a session-level event: it fires on the upstream session
+       when the target service shuts down, never on the stream itself */
+    proxy.on('goaway', (errorCode) => {
       if (errorCode && !request.destroyed) {
         request.destroy(new Error(`HTTP/2 connection closed with error code ${errorCode}`));
       }
@@ -66,7 +82,6 @@ export const streamAPIProxyHandler = async (
     });
 
     stream.on('error', (error) => {
-      debug('HTTP2 stream proxy error:', error);
       if (!request.destroyed) request.destroy(error);
       if (!proxy.closed) proxy.close();
     });
