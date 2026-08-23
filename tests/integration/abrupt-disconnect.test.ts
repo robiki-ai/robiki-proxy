@@ -7,9 +7,9 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createServer, type Socket } from 'node:net';
+import { createServer, type AddressInfo, type Socket } from 'node:net';
 import { WebSocket, WebSocketServer } from 'ws';
-import { delay, withTimeout } from '../helpers/test-utils';
+import { findAvailablePort, withTimeout } from '../helpers/test-utils';
 
 const TSX = 'node_modules/.bin/tsx';
 const FIXTURE = 'tests/helpers/fixtures/proxy-child.ts';
@@ -21,107 +21,206 @@ function startProxyChild(port: number, target: string): Promise<ChildProcess> {
       env: { ...process.env, PROXY_PORT: String(port), PROXY_TARGET: target },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    child.stdout!.on('data', (d) => {
-      if (d.toString().includes('PROXY_READY')) setTimeout(() => resolve(child), 300);
+
+    let output = '';
+    const onData = (chunk: Buffer) => {
+      output += chunk.toString();
+      /* createProxy() resolves before listen() fires; wait for the port. */
+      if (output.includes('PROXY_READY') && output.includes('Server is listening')) {
+        child.stdout!.off('data', onData);
+        child.off('exit', onStartupExit);
+        resolve(child);
+      }
+    };
+    const onStartupExit = (code: number | null, signal: NodeJS.Signals | null) => {
+      reject(new Error(`proxy exited during startup (code=${code} signal=${signal}): ${output}`));
+    };
+
+    child.stdout!.on('data', onData);
+    child.stderr!.on('data', (chunk) => {
+      output += chunk.toString();
     });
-    child.on('error', reject);
+    child.once('error', reject);
+    child.once('exit', onStartupExit);
+  });
+}
+
+function killAndWait(child: ChildProcess): Promise<void> {
+  return new Promise((resolve) => {
+    if (child.exitCode !== null) {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      resolve();
+    }, 1000);
+    child.once('exit', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+    child.kill();
+  });
+}
+
+function closeNetServer(server: {
+  close: (cb?: (err?: Error) => void) => void;
+  closeAllConnections?: () => void;
+}): void {
+  server.closeAllConnections?.();
+  server.close();
+}
+
+function closeWss(wss: WebSocketServer): void {
+  for (const client of wss.clients) client.terminate();
+  wss.close();
+}
+
+/** An uncaughtException kills the process on the next tick; a short settle is enough. */
+function assertChildSurvives(child: ChildProcess, settleMs = 150): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (child.exitCode !== null) {
+      reject(new Error(`proxy already exited with ${child.exitCode}`));
+      return;
+    }
+    const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
+      clearTimeout(timer);
+      reject(new Error(`proxy exited with code=${code} signal=${signal}`));
+    };
+    const timer = setTimeout(() => {
+      child.off('exit', onExit);
+      resolve();
+    }, settleMs);
+    child.once('exit', onExit);
   });
 }
 
 describe('Abrupt disconnect resilience', () => {
-  const cleanups: (() => void)[] = [];
+  const cleanups: (() => void | Promise<void>)[] = [];
 
   afterEach(async () => {
-    for (const cleanup of cleanups.splice(0)) {
-      try {
-        cleanup();
-      } catch {
-        /* already closed */
-      }
-    }
-    await delay(200);
+    await Promise.all(
+      cleanups.splice(0).map(async (cleanup) => {
+        try {
+          await cleanup();
+        } catch {
+          /* already closed */
+        }
+      })
+    );
   });
 
   it('survives a WebSocket message sent while the upstream is still connecting', async () => {
     /* Backend accepts TCP but never completes the WebSocket handshake,
        like a service in the middle of shutting down */
-    const backend = createServer(() => {});
-    await new Promise<void>((resolve) => backend.listen(19101, resolve));
-    cleanups.push(() => backend.close());
+    const sockets: Socket[] = [];
+    const backend = createServer((socket) => {
+      sockets.push(socket);
+      socket.on('error', () => {});
+    });
+    await new Promise<void>((resolve) => backend.listen(0, '127.0.0.1', resolve));
+    const backendPort = (backend.address() as AddressInfo).port;
+    cleanups.push(() => {
+      for (const socket of sockets) socket.destroy();
+      closeNetServer(backend);
+    });
 
-    const proxy = await startProxyChild(19100, 'localhost:19101');
-    cleanups.push(() => proxy.kill());
+    const proxyPort = await findAvailablePort();
+    const proxy = await withTimeout(
+      startProxyChild(proxyPort, `127.0.0.1:${backendPort}`),
+      5000,
+      'proxy child never became ready'
+    );
+    cleanups.push(() => killAndWait(proxy));
 
-    const client = new WebSocket('ws://localhost:19100/');
+    const client = new WebSocket(`ws://localhost:${proxyPort}/`);
     client.on('error', () => {});
     cleanups.push(() => client.close());
 
     await withTimeout(
-      new Promise<void>((resolve) => client.on('open', resolve)),
+      new Promise<void>((resolve) => client.once('open', resolve)),
       3000,
       'client never connected to proxy'
     );
     client.send('message-during-connecting');
 
-    await delay(1500);
+    await assertChildSurvives(proxy);
     expect(proxy.exitCode).toBeNull();
-  }, 15000);
+  });
 
   it('buffers WebSocket messages sent before the upstream is open and delivers them', async () => {
-    const wss = new WebSocketServer({ port: 19103 });
+    const wss = new WebSocketServer({ port: 0, host: '127.0.0.1' });
+    await new Promise<void>((resolve) => wss.once('listening', resolve));
+    const backendPort = (wss.address() as AddressInfo).port;
     wss.on('connection', (ws) => {
       ws.on('message', (message) => ws.send(message));
     });
-    cleanups.push(() => wss.close());
+    cleanups.push(() => closeWss(wss));
 
-    const proxy = await startProxyChild(19102, 'localhost:19103');
-    cleanups.push(() => proxy.kill());
+    const proxyPort = await findAvailablePort();
+    const proxy = await withTimeout(
+      startProxyChild(proxyPort, `127.0.0.1:${backendPort}`),
+      5000,
+      'proxy child never became ready'
+    );
+    cleanups.push(() => killAndWait(proxy));
 
-    const client = new WebSocket('ws://localhost:19102/');
+    const client = new WebSocket(`ws://localhost:${proxyPort}/`);
     client.on('error', () => {});
     cleanups.push(() => client.close());
 
     const echoed = new Promise<string>((resolve) => {
-      client.on('message', (message) => resolve(message.toString()));
+      client.once('message', (message) => resolve(message.toString()));
     });
     /* Sent as soon as the client handshake completes, typically before the
        proxy's upstream socket has finished connecting */
-    client.on('open', () => client.send('early-message'));
+    client.once('open', () => client.send('early-message'));
 
     expect(await withTimeout(echoed, 3000, 'echo never arrived')).toBe('early-message');
     expect(proxy.exitCode).toBeNull();
-  }, 15000);
+  });
 
   it('survives an abrupt client disconnect (RST) while data is flowing', async () => {
-    const wss = new WebSocketServer({ port: 19105 });
+    const wss = new WebSocketServer({ port: 0, host: '127.0.0.1' });
+    await new Promise<void>((resolve) => wss.once('listening', resolve));
+    const backendPort = (wss.address() as AddressInfo).port;
     wss.on('connection', (ws) => {
       const timer = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) ws.send('x'.repeat(16384));
-      }, 2);
+        if (ws.readyState === WebSocket.OPEN) ws.send('x'.repeat(1024));
+      }, 10);
       ws.on('close', () => clearInterval(timer));
       ws.on('error', () => clearInterval(timer));
     });
-    cleanups.push(() => wss.close());
+    cleanups.push(() => closeWss(wss));
 
-    const proxy = await startProxyChild(19104, 'localhost:19105');
-    cleanups.push(() => proxy.kill());
+    const proxyPort = await findAvailablePort();
+    const proxy = await withTimeout(
+      startProxyChild(proxyPort, `127.0.0.1:${backendPort}`),
+      5000,
+      'proxy child never became ready'
+    );
+    cleanups.push(() => killAndWait(proxy));
 
-    const client = new WebSocket('ws://localhost:19104/');
+    const client = new WebSocket(`ws://localhost:${proxyPort}/`);
     client.on('error', () => {});
     cleanups.push(() => client.close());
 
     await withTimeout(
-      new Promise<void>((resolve) => client.on('open', resolve)),
+      new Promise<void>((resolve) => client.once('open', resolve)),
       3000,
       'client never connected to proxy'
     );
-    await delay(300);
+    await withTimeout(
+      new Promise<void>((resolve) => client.once('message', () => resolve())),
+      3000,
+      'no data from backend'
+    );
 
     /* Simulates a SIGKILLed service: kernel sends RST instead of FIN */
     const socket = (client as unknown as { _socket: Socket })._socket;
     socket.resetAndDestroy();
 
-    await delay(1500);
+    await assertChildSurvives(proxy);
     expect(proxy.exitCode).toBeNull();
-  }, 15000);
+  });
 });

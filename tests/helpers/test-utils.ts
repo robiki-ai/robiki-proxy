@@ -2,9 +2,26 @@
  * Test utilities and helper functions
  */
 
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createServer as createHTTP, type Server as HTTPServer } from 'node:http';
 import { WebSocketServer } from 'ws';
 import type { ServerConfig } from '../../src/utils/config';
+
+const tlsFixtureDir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'tls');
+
+/**
+ * Load the committed self-signed TLS fixture used by HTTP/2 tests.
+ * Avoids generating RSA keys at runtime (slow, and can hang on low entropy).
+ */
+export async function createSelfSignedTls(): Promise<{ key: Buffer; cert: Buffer; cleanup: () => Promise<void> }> {
+  const [key, cert] = await Promise.all([
+    readFile(join(tlsFixtureDir, 'key.pem')),
+    readFile(join(tlsFixtureDir, 'cert.pem')),
+  ]);
+  return { key, cert, cleanup: async () => {} };
+}
 
 /**
  * Find an available port for testing
